@@ -104,5 +104,17 @@
     "bg": "#EEEDFE",
     "tx": "#3C3489",
     "pass": "EW2026"
+  },
+  {
+    "id": "JOHANNA",
+    "name": "Johanna Lindner",
+    "pass": "Hotel2016",
+    "role": "housekeeper",
+    "props": [
+      "SPHMK",
+      "TEST"
+    ],
+    "bg": "#F5C4B3",
+    "tx": "#712B13"
   }
 ]
