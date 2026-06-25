@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1A1A2E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>MK Housekeeping</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#1A1A2E;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;}
+#app{height:100dvh;max-width:480px;margin:0 auto;background:#f5f4f0;display:flex;flex-direction:column;overflow:hidden;}
+.hdr{background:#1A1A2E;color:#fff;padding:10px 14px 8px;padding-top:calc(10px + env(safe-area-inset-top));flex-shrink:0;}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+.hdr h1{font-size:16px;font-weight:600;}
+.hdr-right{display:flex;align-items:center;gap:6px;}
+.user-chip{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);}
+.role-badge{font-size:11px;font-weight:600;padding:3px 11px;border-radius:20px;cursor:pointer;border:none;outline:none;}
+.role-admin{background:#B5D4F4;color:#0C447C;}
+.role-hk{background:#9FE1CB;color:#085041;}
+.prop-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+.prop-row::-webkit-scrollbar{display:none;}
+.prop-btn{font-size:11px;padding:4px 11px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.prop-btn.act{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.55);}
+.prop-name{font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;padding-left:1px;height:13px;}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e8e7e4;flex-shrink:0;}
+.tab{flex:1;padding:9px 2px;font-size:11px;font-weight:500;text-align:center;cursor:pointer;color:#888;border-bottom:2px solid transparent;}
+.tab.act{color:#1A1A2E;border-bottom-color:#1A1A2E;}
+.body{flex:1;overflow-y:auto;background:#f5f4f0;padding:10px;-webkit-overflow-scrolling:touch;padding-bottom:calc(10px + env(safe-area-inset-bottom));}
+.stat-row{display:flex;gap:8px;margin-bottom:10px;}
+.stat{flex:1;background:#fff;border-radius:10px;border:.5px solid #e8e7e4;padding:8px 10px;}
+.stat .n{font-size:22px;font-weight:600;}
+.stat .l{font-size:11px;color:#888;margin-top:1px;}
+.stat.zr .n{color:#A32D2D;}
+.filter-row{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.filter-row::-webkit-scrollbar{display:none;}
+.fbtn{font-size:11px;padding:5px 13px;border-radius:12px;border:.5px solid #ccc;background:#fff;color:#666;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.fbtn.act{background:#1A1A2E;color:#fff;border-color:#1A1A2E;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.tile{background:#fff;border-radius:10px;border:.5px solid #e8e7e4;padding:8px 6px 14px;cursor:pointer;position:relative;text-align:center;min-height:60px;-webkit-tap-highlight-color:transparent;}
+.tile.dirty{background:#FEF3F2;border-color:#F09595;}
+.tile.zr{background:#E24B4A;border-color:#A32D2D;}
+.tile.clean{background:#EAF3DE;border-color:#C0DD97;}
+.tile.inspect{background:#E6F1FB;border-color:#85B7EB;}
+.tile.ooo{background:#F1EFE8;border-color:#D3D1C7;}
+.tile.timing{border:2px solid #FAC775;background:#FAEEDA;}
+.tile.sel{outline:2.5px solid #1A1A2E;outline-offset:1px;}
+.tile .rnum{font-size:16px;font-weight:600;color:#1A1A2E;}
+.tile.zr .rnum{color:#fff;}
+.tile.dirty .rnum{color:#791F1F;}
+.tile.timing .rnum{color:#412402;}
+.tile.clean .rnum{color:#27500A;}
+.tile.inspect .rnum{color:#0C447C;}
+.tile.ooo .rnum{color:#5F5E5A;}
+.tile .sub{font-size:9px;margin-top:1px;color:#999;}
+.tile.zr .sub{color:rgba(255,255,255,.8);}
+.tile .asgn{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:600;padding:1px 5px;border-radius:6px;white-space:nowrap;}
+.timer-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#EF9F27;animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+.panel{background:#fff;border-radius:12px;border:.5px solid #e8e7e4;padding:13px;margin-bottom:10px;}
+.panel h3{font-size:14px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.zr-badge{font-size:10px;background:#E24B4A;color:#fff;padding:2px 7px;border-radius:7px;font-weight:500;}
+.hk-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #f0efe9;}
+.hk-row:last-child{border-bottom:none;}
+.hk-info{display:flex;align-items:center;gap:9px;}
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0;}
+.hk-name{font-size:13px;font-weight:500;}
+.hk-load{font-size:11px;color:#888;}
+.asgn-btn{font-size:11px;padding:5px 11px;border-radius:8px;border:.5px solid #ccc;background:transparent;cursor:pointer;color:#333;}
+.asgn-btn.assigned{background:#1A1A2E;color:#fff;border-color:#1A1A2E;}
+.action-btn{width:100%;padding:11px;border-radius:10px;border:none;font-size:14px;font-weight:500;cursor:pointer;margin-top:8px;}
+.btn-start{background:#854F0B;color:#fff;}
+.btn-done{background:#1A1A2E;color:#fff;}
+.timer-box{background:#FAEEDA;border:1px solid #FAC775;border-radius:10px;padding:13px;text-align:center;margin:8px 0;}
+.timer-lbl{font-size:11px;color:#633806;margin-bottom:3px;}
+.timer-val{font-size:32px;font-weight:700;color:#412402;letter-spacing:3px;font-variant-numeric:tabular-nums;}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:#888;}
+.leg-dot{width:10px;height:10px;border-radius:50%;}
+.rule-card{background:#fff;border-radius:10px;border:.5px solid #e8e7e4;padding:11px 13px;margin-bottom:8px;border-left-width:3px;}
+.rule-card .rt{font-size:13px;font-weight:600;}
+.rule-card .rd{font-size:11px;color:#888;margin-top:3px;line-height:1.4;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-top:9px;}
+.tog{width:38px;height:22px;border-radius:11px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;border:none;}
+.tog.on{background:#1A1A2E;}
+.tog.off{background:#ccc;}
+.tog::after{content:'';position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s;}
+.tog.on::after{left:19px;}
+.tog.off::after{left:3px;}
+.stat-card{background:#fff;border-radius:10px;border:.5px solid #e8e7e4;padding:11px 13px;margin-bottom:8px;}
+.bar-bg{background:#f0efe9;border-radius:4px;height:5px;margin-top:7px;overflow:hidden;}
+.bar-fill{height:5px;border-radius:4px;}
+.sec-title{font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;}
+.log-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:.5px solid #f0efe9;}
+.log-row:last-child{border-bottom:none;}
+.team-card{background:#fff;border-radius:10px;border:.5px solid #e8e7e4;padding:11px 13px;margin-bottom:8px;}
+.role-pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;}
+.ra{background:#B5D4F4;color:#0C447C;}
+.rh{background:#9FE1CB;color:#085041;}
+.screen-center{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#888;text-align:center;padding:24px;}
+.spinner{width:28px;height:28px;border:3px solid #e8e7e4;border-top-color:#1A1A2E;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.err-msg{font-size:13px;color:#A32D2D;max-width:290px;line-height:1.5;}
+.retry-btn{padding:9px 22px;border-radius:9px;background:#1A1A2E;color:#fff;border:none;font-size:13px;cursor:pointer;margin-top:4px;}
+.login-wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:#1A1A2E;}
+.login-logo{font-size:38px;margin-bottom:6px;}
+.login-title{font-size:18px;font-weight:600;color:#fff;margin-bottom:2px;}
+.login-sub{font-size:12px;color:rgba(255,255,255,.55);margin-bottom:22px;}
+.login-input{width:100%;max-width:280px;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font-size:14px;margin-bottom:10px;outline:none;}
+.login-input::placeholder{color:rgba(255,255,255,.4);}
+.login-input:focus{border-color:rgba(255,255,255,.45);}
+.login-btn{width:100%;max-width:280px;padding:12px;border-radius:10px;background:#9FE1CB;color:#085041;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;}
+.login-err{font-size:12px;color:#F09595;max-width:280px;text-align:center;margin-top:8px;}
+.logout-btn{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:none;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="app"><div class="screen-center"><div class="spinner"></div><p style="font-size:13px">Starte…</p></div></div>
+
+<script>
+const API = '/api/apaleo';
+
+const PROPERTY_NAMES = {
+  ARNS:'Gästehäuser Arnstorf', BER:'Berlin', EBO:'Eschborn', FRA:'Frankfurt',
+  LON:'London', MUC_CTY:'München City', MUC_MWP:'München MWP', REM:'Remscheid',
+  RUE:'Rüsselsheim', SPHMK:'Schlossparkhotel Mariakirchen',
+  STGR:'Stuttgart', TIA:'Tirana', ZPF:'Passau', TEST:'TEST MK Hotel',
+};
+
+const USERS = [
+  {id:'AS',name:'Arno Sonderfeld',role:'admin',props:['alle'],bg:'#B5D4F4',tx:'#0C447C',pass:'AS'},
+  {id:'LD',name:'Lena Dressler',role:'admin',props:['STGR','SPHMK'],bg:'#B5D4F4',tx:'#0C447C',pass:'LD2026'},
+  {id:'MK',name:'Maria K.',role:'housekeeper',props:['STGR'],bg:'#EEEDFE',tx:'#534AB7',pass:'MK2026'},
+  {id:'AW',name:'Anna W.',role:'housekeeper',props:['STGR','SPHMK'],bg:'#9FE1CB',tx:'#085041',pass:'AW2026'},
+  {id:'TE',name:'Tanja E.',role:'housekeeper',props:['EBO','ARNS'],bg:'#FAC775',tx:'#633806',pass:'TE2026'},
+  {id:'VM',name:'Vera M.',role:'housekeeper',props:['TIA'],bg:'#F5C4B3',tx:'#712B13',pass:'VM2026'},
+  {id:'BN',name:'Beata N.',role:'housekeeper',props:['MUC_CTY','MUC_MWP'],bg:'#C0DD97',tx:'#27500A',pass:'BN2026'},
+  {id:'SR',name:'Sandra R.',role:'housekeeper',props:['BER','FRA'],bg:'#FBEAF0',tx:'#993556',pass:'SR2026'},
+  {id:'HM',name:'Hana M.',role:'housekeeper',props:['REM','RUE'],bg:'#E6F1FB',tx:'#185FA5',pass:'HM2026'},
+  {id:'EW',name:'Eva W.',role:'housekeeper',props:['ZPF','LON'],bg:'#EEEDFE',tx:'#3C3489',pass:'EW2026'},
+];
+
+const LOGIN_KEY = 'mkhk_session';
+function userProps(u){ return u.props.includes('alle') ? Object.keys(PROPERTY_NAMES) : u.props; }
+
+async function apiFetch(path, method='GET', body=null) {
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({path, method, body}),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = text; try { msg = JSON.parse(text).error || text; } catch {}
+    throw new Error(msg);
+  }
+  return text ? JSON.parse(text) : {};
+}
+
+async function pushCondition(unitId, cond) {
+  try {
+    const r = await apiFetch('/inventory/v1/units/condition','PUT',{unitsConditions:[{id:unitId,condition:cond}]});
+    if(r && r.error) console.error('[pushCondition] Apaleo Fehler:', JSON.stringify(r));
+    else console.log('[pushCondition] OK', unitId, cond);
+  } catch(e) { console.error('[pushCondition] Exception:', e.message); }
+}
+
+let S = {
+  loggedIn:false, currentUser:null, loginError:'',
+  role:'admin', prop:null, properties:[],
+  units:{}, screen:'rooms', filter:'all',
+  assignments:{}, conditions:{}, timers:{}, completedTimes:[],
+  selRoom:null, loadingProp:false, rtog:{1:true,2:true,3:true},
+};
+let timerIv = null;
+
+async function fetchProperties(allowedIds) {
+  const d = await apiFetch('/inventory/v1/properties?pageSize=100');
+  return (d.properties||[]).filter(p => p.id in PROPERTY_NAMES && allowedIds.includes(p.id));
+}
+
+async function fetchPropertyData(propId) {
+  const [ud, rd] = await Promise.all([
+    apiFetch('/inventory/v1/units?propertyId='+propId+'&pageSize=500'),
+    apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=InHouse&pageSize=500'),
+  ]);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const resMap = {};
+  (rd.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) resMap[uid]=r; });
+  return (ud.units||[]).map(u => {
+    const res = resMap[u.id];
+    const nights = res ? Math.max(0, Math.floor((today - new Date(res.arrival.split('T')[0])) / 86400000)) : 0;
+    const dep = res?.departure ? new Date(res.departure.split('T')[0]) : null;
+    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:dep?dep<=today:false };
+  });
+}
+
+const rKey    = (p,n) => p+'_'+n;
+const isZR    = u => u.c==='Dirty'&&u.o&&u.nights>=2&&u.nights%2===0&&!u.dT;
+const getCond = (u,p) => S.conditions[rKey(p,u.n)]||u.c;
+const fmtDur  = s => String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+const fmtDurL = s => { const m=Math.floor(s/60); return m<1?s+'s':m+' min '+s%60+'s'; };
+const tcls    = c => ({Clean:'clean',Dirty:'dirty',CleanToBeInspected:'inspect',OutOfService:'ooo',OutOfOrder:'ooo'}[c]||'dirty');
+
+function getStats(p) {
+  let dirty=0,zr=0,insp=0,clean=0;
+  (S.units[p]||[]).forEach(u=>{const c=getCond(u,p);if(isZR(u)&&c==='Dirty')zr++;else if(c==='Dirty')dirty++;else if(c==='CleanToBeInspected')insp++;else if(c==='Clean')clean++;});
+  return{dirty,zr,insp,clean};
+}
+function getHKs(p){ return USERS.filter(u=>u.role==='housekeeper'&&(u.props.includes(p)||u.props.includes('alle'))); }
+function getWL(uid,p){ return Object.entries(S.assignments).filter(([k,v])=>v===uid&&k.startsWith(p+'_')).length; }
+function stopTimerIv(){ if(timerIv){clearInterval(timerIv);timerIv=null;} }
+function maybeTimerIv(){
+  if(!S.selRoom) return;
+  const k=rKey(S.prop,S.selRoom.n);
+  if(!S.timers[k]) return;
+  timerIv=setInterval(()=>{
+    const el=document.getElementById('live-timer');
+    if(!el||!S.timers[k]){stopTimerIv();return;}
+    el.textContent=fmtDur(Math.floor((Date.now()-S.timers[k].start)/1000));
+  },1000);
+}
+
+function render(){ stopTimerIv(); document.getElementById('app').innerHTML=buildApp(); maybeTimerIv(); focusLoginIfNeeded(); }
+
+function focusLoginIfNeeded(){
+  if(!S.loggedIn){ const el=document.getElementById('li-user'); if(el) el.focus(); }
+}
+
+function buildApp(){
+  if(!S.loggedIn) return scrLogin();
+  const tabs=S.role==='admin'
+    ?[{k:'rooms',l:'Zimmer'},{k:'stats',l:'Statistik'},{k:'rules',l:'Regeln'},{k:'team',l:'Team'}]
+    :[{k:'rooms',l:'Zimmer'}];
+  return `
+<div class="hdr">
+  <div class="hdr-row">
+    <h1>MK Housekeeping</h1>
+    <div class="hdr-right">
+      <span class="user-chip">${S.currentUser.id} · ${S.currentUser.name.split(' ')[0]}</span>
+      <span class="role-badge ${S.role==='admin'?'role-admin':'role-hk'}">${S.role==='admin'?'Admin':'Housekeeper'}</span>
+      <button class="logout-btn" onclick="ev_logout()">Abmelden</button>
+    </div>
+  </div>
+  <div class="prop-row">${S.properties.map(p=>`<button class="prop-btn${p.id===S.prop?' act':''}" onclick="ev_prop('${p.id}')">${p.id}</button>`).join('')}</div>
+  <div class="prop-name">${S.prop?(PROPERTY_NAMES[S.prop]||S.prop):''}</div>
+</div>
+<div class="tabs">${tabs.map(t=>`<div class="tab${t.k===S.screen?' act':''}" onclick="ev_screen('${t.k}')">${t.l}</div>`).join('')}</div>
+<div class="body" id="hkc">${S.loadingProp?'<div class="screen-center"><div class="spinner"></div><p style="font-size:13px">Lade Zimmer…</p></div>':buildScreen()}</div>`;
+}
+
+function scrLogin(){
+  return `<div class="login-wrap">
+    <div class="login-logo">🏨</div>
+    <div class="login-title">MK Housekeeping</div>
+    <div class="login-sub">Bitte anmelden</div>
+    <input id="li-user" class="login-input" placeholder="Benutzername" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('li-pass').focus()">
+    <input id="li-pass" type="password" class="login-input" placeholder="Passwort" autocomplete="current-password" onkeydown="if(event.key==='Enter')ev_login()">
+    <button class="login-btn" onclick="ev_login()">Anmelden</button>
+    ${S.loginError?`<div class="login-err">${S.loginError}</div>`:''}
+  </div>`;
+}
+
+function buildScreen(){
+  if(S.screen==='rooms')  return scrRooms();
+  if(S.screen==='stats')  return scrStats();
+  if(S.screen==='rules')  return scrRules();
+  if(S.screen==='team')   return scrTeam();
+  return '';
+}
+
+function scrRooms(){
+  const us=S.units[S.prop]||[], st=getStats(S.prop);
+  let fil=us;
+  if(S.filter==='dirty')   fil=us.filter(u=>getCond(u,S.prop)==='Dirty'&&!isZR(u));
+  else if(S.filter==='zr') fil=us.filter(u=>isZR(u)&&getCond(u,S.prop)==='Dirty');
+  else if(S.filter==='inspect') fil=us.filter(u=>getCond(u,S.prop)==='CleanToBeInspected');
+  else if(S.filter==='clean')   fil=us.filter(u=>getCond(u,S.prop)==='Clean');
+
+  let panel='';
+  if(S.selRoom){
+    const u=us.find(x=>x.n===S.selRoom.n);
+    if(u){
+      const c=getCond(u,S.prop),zr=isZR(u)&&c==='Dirty',k=rKey(S.prop,u.n);
+      if(S.role==='admin'&&(c==='Dirty'||zr)){
+        const hks=getHKs(S.prop);
+        panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}</h3>
+        ${hks.length?hks.map(h=>`<div class="hk-row"><div class="hk-info">
+          <div class="avatar" style="width:30px;height:30px;font-size:11px;background:${h.bg};color:${h.tx}">${h.id}</div>
+          <div><div class="hk-name">${h.name}</div><div class="hk-load">${getWL(h.id,S.prop)} Zimmer</div></div></div>
+          <button class="asgn-btn${S.assignments[k]===h.id?' assigned':''}" onclick="ev_assign('${k}','${h.id}')">${S.assignments[k]===h.id?'✓ Zugeteilt':'Zuweisen'}</button>
+        </div>`).join(''):'<p style="font-size:12px;color:#888">Keine Zimmermädchen konfiguriert.</p>'}
+        </div>`;
+      } else if(S.role==='housekeeper'&&(c==='Dirty'||zr)){
+        const has=!!S.timers[k];
+        const el=has?Math.floor((Date.now()-S.timers[k].start)/1000):0;
+        panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}</h3>
+        <div style="font-size:12px;color:#888;margin-bottom:6px;">${zr?'Zwangsreinigung fällig':'Reguläre Reinigung'}</div>
+        ${has?`<div class="timer-box"><div class="timer-lbl">Reinigungszeit läuft</div><div class="timer-val" id="live-timer">${fmtDur(el)}</div></div>
+        <button class="action-btn btn-done" onclick="ev_inspect('${k}')">Reinigung abschließen → Inspektion</button>`
+        :`<button class="action-btn btn-start" onclick="ev_startTimer('${k}')">▶ Reinigung starten</button>`}
+        </div>`;
+      }
+    }
+  }
+
+  return `${S.selRoom?panel:`<div class="stat-row">
+    <div class="stat${st.zr>0?' zr':''}"><div class="n">${st.zr>0?st.zr:st.dirty}</div><div class="l">${st.zr>0?'ZR fällig':'Dirty'}</div></div>
+    <div class="stat"><div class="n">${st.insp}</div><div class="l">Inspektion</div></div>
+    <div class="stat"><div class="n">${st.clean}</div><div class="l">Clean</div></div>
+  </div>`}
+  <div class="filter-row">${[['all','Alle'],['zr','ZR'],['dirty','Dirty'],['inspect','Inspektion'],['clean','Clean']].map(([k,l])=>`<button class="fbtn${S.filter===k?' act':''}" onclick="ev_filter('${k}')">${l}</button>`).join('')}</div>
+  <div class="grid">${fil.map(u=>{
+    const c=getCond(u,S.prop),zr=isZR(u)&&c==='Dirty',k=rKey(S.prop,u.n);
+    const running=!!S.timers[k],tc=running?'timing':(zr?'zr':tcls(c));
+    const au=S.assignments[k]?USERS.find(x=>x.id===S.assignments[k]):null;
+    const sub=running?'läuft…':zr?`ZR·${u.nights}n`:c==='Dirty'&&u.o?`Stay·${u.nights}n`:c==='CleanToBeInspected'?'Prüfen':(c==='OutOfService'||c==='OutOfOrder')?'Gesperrt':'';
+    return`<div class="tile ${tc}${S.selRoom?.n===u.n?' sel':''}" onclick="ev_sel('${u.n}')">
+      ${running?'<div class="timer-dot"></div>':''}
+      <div class="rnum">${u.n}</div><div class="sub">${sub}</div>
+      ${au?`<div class="asgn" style="background:${au.bg};color:${au.tx}">${au.id}</div>`:''}
+    </div>`;
+  }).join('')}</div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#E24B4A"></div>ZR</div>
+    <div class="leg"><div class="leg-dot" style="background:#F09595"></div>Dirty</div>
+    <div class="leg"><div class="leg-dot" style="background:#FAC775"></div>Aktiv</div>
+    <div class="leg"><div class="leg-dot" style="background:#85B7EB"></div>Inspektion</div>
+    <div class="leg"><div class="leg-dot" style="background:#97C459"></div>Clean</div>
+  </div>`;
+}
+
+function scrStats(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const all=S.completedTimes.filter(t=>t.ts>=today.getTime());
+  const tot=all.length,avg=tot?Math.round(all.reduce((s,t)=>s+t.duration,0)/tot):0;
+  const fast=tot?Math.min(...all.map(t=>t.duration)):0;
+  const hks=USERS.filter(u=>u.role==='housekeeper');
+  const maxA=Math.max(1,...hks.map(h=>{const ht=all.filter(t=>t.uid===h.id);return ht.length?Math.round(ht.reduce((s,t)=>s+t.duration,0)/ht.length):0;}));
+  return `<div class="stat-row">
+    <div class="stat"><div class="n">${tot}</div><div class="l">Zimmer heute</div></div>
+    <div class="stat"><div class="n">${tot?fmtDur(avg):'—'}</div><div class="l">Ø Dauer</div></div>
+    <div class="stat"><div class="n">${fast?fmtDur(fast):'—'}</div><div class="l">Schnellste</div></div>
+  </div>
+  <div class="sec-title">Leistung heute</div>
+  ${hks.map(h=>{const ht=all.filter(t=>t.uid===h.id),cnt=ht.length,a=cnt?Math.round(ht.reduce((s,t)=>s+t.duration,0)/cnt):0,pct=a?Math.round(a/maxA*100):0;
+  return`<div class="stat-card"><div style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:9px;"><div class="avatar" style="width:34px;height:34px;font-size:12px;background:${h.bg};color:${h.tx}">${h.id}</div>
+    <div><div style="font-size:13px;font-weight:500;">${h.name}</div><div style="font-size:11px;color:#888;">${h.props.join(', ')}</div></div></div>
+    <div style="text-align:right;"><div style="font-size:14px;font-weight:600;">${cnt} Zimmer</div><div style="font-size:11px;color:#888;">Ø ${a?fmtDurL(a):'—'}</div></div>
+  </div>${a?`<div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${h.bg};"></div></div>`:''}</div>`;}).join('')}
+  ${S.completedTimes.length?`<div class="sec-title" style="margin-top:12px;">Letzte Abschlüsse</div>
+  <div class="stat-card">${S.completedTimes.slice(-8).reverse().map(t=>{const u=USERS.find(x=>x.id===t.uid);
+  return`<div class="log-row"><div style="display:flex;align-items:center;gap:7px;"><div class="avatar" style="width:24px;height:24px;font-size:9px;background:${u?u.bg:'#eee'};color:${u?u.tx:'#666'}">${t.uid}</div><span style="font-size:12px;">Zi. ${t.room} · ${t.prop}</span></div><span style="font-size:12px;font-weight:600;">${fmtDurL(t.duration)}</span></div>`;}).join('')}</div>`
+  :'<p style="font-size:12px;color:#888;text-align:center;padding:20px 0;">Noch keine Reinigungen heute.</p>'}`;
+}
+
+function scrRules(){
+  return`<div class="sec-title">Automatisierungsregeln</div>
+  ${[{id:1,name:'Zwangsreinigung — 2-Nächte-Trigger',desc:'Stayover ≥2 Nächte, geradzahlig, kein Abreisetag → ZR (rot)',tc:'#A32D2D',bg:'#FCEBEB'},
+    {id:2,name:'Tagesreinigung nach Check-out',desc:'Zimmer mit Abreise heute → automatisch Dirty nach Check-out',tc:'#27500A',bg:'#EAF3DE'},
+    {id:3,name:'Inspektions-Erinnerung',desc:'CleanToBeInspected länger als 2h → Push an Hausdame',tc:'#0C447C',bg:'#E6F1FB'}
+  ].map(r=>`<div class="rule-card" style="border-left-color:${r.tc};background:${r.bg};">
+    <div class="rt" style="color:${r.tc}">${r.name}</div><div class="rd">${r.desc}</div>
+    <div class="toggle-row"><span style="font-size:11px;color:#888;">Aktiv</span>
+    <button class="tog${S.rtog[r.id]?' on':' off'}" onclick="ev_tog(${r.id})"></button></div>
+  </div>`).join('')}`;
+}
+
+function scrTeam(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const tt=S.completedTimes.filter(t=>t.ts>=today.getTime());
+  return`<div class="sec-title">Administratoren</div>
+  ${USERS.filter(u=>u.role==='admin').map(u=>`<div class="team-card"><div style="display:flex;align-items:center;gap:10px;">
+    <div class="avatar" style="width:38px;height:38px;font-size:13px;background:${u.bg};color:${u.tx}">${u.id}</div>
+    <div><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:500;">${u.name}</span><span class="role-pill ra">Admin</span></div>
+    <div style="font-size:11px;color:#888;margin-top:2px;">Vollzugriff</div></div></div></div>`).join('')}
+  <div class="sec-title" style="margin-top:14px;">Zimmermädchen</div>
+  ${USERS.filter(u=>u.role==='housekeeper').map(u=>`<div class="team-card"><div style="display:flex;align-items:center;gap:10px;">
+    <div class="avatar" style="width:38px;height:38px;font-size:13px;background:${u.bg};color:${u.tx}">${u.id}</div>
+    <div style="flex:1;"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;"><span style="font-size:14px;font-weight:500;">${u.name}</span><span class="role-pill rh">Housekeeper</span></div>
+    <div style="font-size:11px;color:#888;margin-top:2px;">${u.props.join(', ')} · ${tt.filter(t=>t.uid===u.id).length} heute fertig · ${getWL(u.id,S.prop||'')} zugeteilt</div></div></div></div>`).join('')}`;
+}
+
+function matchUser(input){
+  const v=(input||'').trim().toLowerCase();
+  if(!v) return null;
+  return USERS.find(u=>u.id.toLowerCase()===v||u.name.toLowerCase()===v||u.name.split(' ')[0].toLowerCase()===v);
+}
+function ev_login(){
+  const uVal=document.getElementById('li-user').value;
+  const pVal=document.getElementById('li-pass').value;
+  const user=matchUser(uVal);
+  if(!user||user.pass!==pVal){ S.loginError='Benutzername oder Passwort falsch.'; render(); return; }
+  doLogin(user);
+}
+function doLogin(user){
+  S.loggedIn=true; S.currentUser=user; S.role=user.role; S.loginError='';
+  S.prop=null; S.properties=[]; S.units={}; S.selRoom=null; S.screen='rooms'; S.filter='all';
+  try{ localStorage.setItem(LOGIN_KEY,user.id); }catch(e){}
+  init();
+}
+function ev_logout(){
+  S.loggedIn=false; S.currentUser=null; S.loginError='';
+  S.prop=null; S.properties=[]; S.units={}; S.selRoom=null;
+  try{ localStorage.removeItem(LOGIN_KEY); }catch(e){}
+  render();
+}
+async function ev_prop(p){
+  if(S.prop===p) return; S.prop=p;S.selRoom=null;S.filter='all';
+  if(!S.units[p]){ S.loadingProp=true;render();
+    try{ S.units[p]=await fetchPropertyData(p); }catch(e){ S.units[p]=[]; }
+    S.loadingProp=false; }
+  render();
+}
+function ev_screen(s){ S.screen=s;S.selRoom=null;render(); }
+function ev_filter(f){ S.filter=f;render(); }
+function ev_tog(id){ S.rtog[id]=!S.rtog[id];render(); }
+function ev_sel(n){ S.selRoom=S.selRoom?.n===n?null:{n,prop:S.prop}; stopTimerIv(); document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv(); }
+function ev_assign(k,uid){ S.assignments[k]===uid?delete S.assignments[k]:(S.assignments[k]=uid); document.getElementById('hkc').innerHTML=buildScreen(); }
+function ev_startTimer(k){ S.timers[k]={start:Date.now(),uid:S.currentUser.id}; document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv(); }
+async function ev_inspect(k){
+  if(S.timers[k]){ const dur=Math.floor((Date.now()-S.timers[k].start)/1000),pts=k.split('_');
+    S.completedTimes.push({uid:S.timers[k].uid,prop:pts[0],room:pts.slice(1).join('_'),duration:dur,ts:Date.now()}); delete S.timers[k]; }
+  S.conditions[k]='CleanToBeInspected'; S.selRoom=null;
+  const u=(S.units[S.prop]||[]).find(x=>x.n===k.split('_').slice(1).join('_'));
+  if(u) u.c='CleanToBeInspected';
+  if(u?.id) pushCondition(u.id,'CleanToBeInspected');
+  render();
+}
+
+async function init(){
+  if(!S.loggedIn){
+    try{
+      const savedId=localStorage.getItem(LOGIN_KEY);
+      const saved=savedId?USERS.find(u=>u.id===savedId):null;
+      if(saved){ S.loggedIn=true; S.currentUser=saved; S.role=saved.role; }
+    }catch(e){}
+  }
+  if(!S.loggedIn){ render(); return; }
+
+  document.getElementById('app').innerHTML='<div class="screen-center"><div class="spinner"></div><p style="font-size:13px">Verbinde mit Apaleo…</p></div>';
+  try{
+    const allowed=userProps(S.currentUser);
+    const props=await fetchProperties(allowed);
+    S.properties=props.length>0?props:allowed.filter(id=>id in PROPERTY_NAMES).map(id=>({id,name:PROPERTY_NAMES[id]}));
+    S.prop=S.properties[0]?.id||allowed[0];
+    S.loadingProp=true; render();
+    S.units[S.prop]=await fetchPropertyData(S.prop);
+    S.loadingProp=false; render();
+  }catch(e){
+    document.getElementById('app').innerHTML=`<div class="screen-center">
+      <p style="font-size:22px">⚠️</p>
+      <p class="err-msg">${e.message}</p>
+      <button class="retry-btn" onclick="init()">Erneut versuchen</button>
+      <button style="margin-top:10px;background:none;border:none;color:#888;font-size:12px;text-decoration:underline;cursor:pointer;" onclick="ev_logout()">Abmelden</button>
+    </div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
