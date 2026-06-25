@@ -166,7 +166,7 @@ async function apiFetch(path, method='GET', body=null) {
 
 async function pushCondition(unitId, cond) {
   try {
-    const r = await apiFetch('/inventory/v1/units/condition','PUT',{unitsConditions:[{id:unitId,condition:cond}]});
+    const r = await apiFetch('/operations/v1/units-condition','PUT',{unitsConditions:[{id:unitId,condition:cond}]});
     if(r && r.error){ console.error('[pushCondition] Apaleo Fehler:', JSON.stringify(r)); return {ok:false,msg:r.error}; }
     console.log('[pushCondition] OK', unitId, cond);
     return {ok:true};
