@@ -1,12 +1,108 @@
 [
-  {"id":"AS","name":"Arno Sonderfeld","role":"admin","props":["alle"],"bg":"#B5D4F4","tx":"#0C447C","pass":"AS"},
-  {"id":"LD","name":"Lena Dressler","role":"admin","props":["STGR","SPHMK"],"bg":"#B5D4F4","tx":"#0C447C","pass":"LD2026"},
-  {"id":"MK","name":"Maria K.","role":"housekeeper","props":["STGR"],"bg":"#EEEDFE","tx":"#534AB7","pass":"MK2026"},
-  {"id":"AW","name":"Anna W.","role":"housekeeper","props":["STGR","SPHMK"],"bg":"#9FE1CB","tx":"#085041","pass":"AW2026"},
-  {"id":"TE","name":"Tanja E.","role":"housekeeper","props":["EBO","ARNS"],"bg":"#FAC775","tx":"#633806","pass":"TE2026"},
-  {"id":"VM","name":"Vera M.","role":"housekeeper","props":["TIA"],"bg":"#F5C4B3","tx":"#712B13","pass":"VM2026"},
-  {"id":"BN","name":"Beata N.","role":"housekeeper","props":["MUC_CTY","MUC_MWP"],"bg":"#C0DD97","tx":"#27500A","pass":"BN2026"},
-  {"id":"SR","name":"Sandra R.","role":"housekeeper","props":["BER","FRA"],"bg":"#FBEAF0","tx":"#993556","pass":"SR2026"},
-  {"id":"HM","name":"Hana M.","role":"housekeeper","props":["REM","RUE"],"bg":"#E6F1FB","tx":"#185FA5","pass":"HM2026"},
-  {"id":"EW","name":"Eva W.","role":"housekeeper","props":["ZPF","LON"],"bg":"#EEEDFE","tx":"#3C3489","pass":"EW2026"}
+  {
+    "id": "AS",
+    "name": "Arno Sonderfeld",
+    "role": "admin",
+    "props": [
+      "alle"
+    ],
+    "bg": "#B5D4F4",
+    "tx": "#0C447C",
+    "pass": "AS"
+  },
+  {
+    "id": "LD",
+    "name": "Lena Dressler",
+    "role": "admin",
+    "props": [
+      "STGR",
+      "SPHMK"
+    ],
+    "bg": "#B5D4F4",
+    "tx": "#0C447C",
+    "pass": "LD2026"
+  },
+  {
+    "id": "AW",
+    "name": "Anna W.",
+    "role": "housekeeper",
+    "props": [
+      "STGR",
+      "SPHMK"
+    ],
+    "bg": "#9FE1CB",
+    "tx": "#085041",
+    "pass": "AW2026"
+  },
+  {
+    "id": "TE",
+    "name": "Tanja E.",
+    "role": "housekeeper",
+    "props": [
+      "EBO",
+      "ARNS"
+    ],
+    "bg": "#FAC775",
+    "tx": "#633806",
+    "pass": "TE2026"
+  },
+  {
+    "id": "VM",
+    "name": "Vera M.",
+    "role": "housekeeper",
+    "props": [
+      "TIA"
+    ],
+    "bg": "#F5C4B3",
+    "tx": "#712B13",
+    "pass": "VM2026"
+  },
+  {
+    "id": "BN",
+    "name": "Beata N.",
+    "role": "housekeeper",
+    "props": [
+      "MUC_CTY",
+      "MUC_MWP"
+    ],
+    "bg": "#C0DD97",
+    "tx": "#27500A",
+    "pass": "BN2026"
+  },
+  {
+    "id": "SR",
+    "name": "Sandra R.",
+    "role": "housekeeper",
+    "props": [
+      "BER",
+      "FRA"
+    ],
+    "bg": "#FBEAF0",
+    "tx": "#993556",
+    "pass": "SR2026"
+  },
+  {
+    "id": "HM",
+    "name": "Hana M.",
+    "role": "housekeeper",
+    "props": [
+      "REM",
+      "RUE"
+    ],
+    "bg": "#E6F1FB",
+    "tx": "#185FA5",
+    "pass": "HM2026"
+  },
+  {
+    "id": "EW",
+    "name": "Eva W.",
+    "role": "housekeeper",
+    "props": [
+      "ZPF",
+      "LON"
+    ],
+    "bg": "#EEEDFE",
+    "tx": "#3C3489",
+    "pass": "EW2026"
+  }
 ]
