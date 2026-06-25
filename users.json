@@ -116,5 +116,16 @@
     ],
     "bg": "#F5C4B3",
     "tx": "#712B13"
+  },
+  {
+    "id": "MARIA",
+    "name": "Maria Lindner",
+    "pass": "Hotel2016",
+    "role": "admin",
+    "props": [
+      "alle"
+    ],
+    "bg": "#E6F1FB",
+    "tx": "#185FA5"
   }
 ]
