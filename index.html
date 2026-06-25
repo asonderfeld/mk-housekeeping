@@ -12,7 +12,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#1A1A2E;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;}
-#app{height:100dvh;max-width:480px;margin:0 auto;background:#f5f4f0;display:flex;flex-direction:column;overflow:hidden;}
+#app{height:100dvh;max-width:480px;margin:0 auto;background:#f5f4f0;display:flex;flex-direction:column;overflow:hidden;position:relative;}
 .hdr{background:#1A1A2E;color:#fff;padding:10px 14px 8px;padding-top:calc(10px + env(safe-area-inset-top));flex-shrink:0;}
 .hdr-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
 .hdr h1{font-size:16px;font-weight:600;}
@@ -115,6 +115,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 .login-btn{width:100%;max-width:280px;padding:12px;border-radius:10px;background:#9FE1CB;color:#085041;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;}
 .login-err{font-size:12px;color:#F09595;max-width:280px;text-align:center;margin-top:8px;}
 .logout-btn{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:none;cursor:pointer;}
+.toast{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:50;padding:10px 13px;border-radius:10px;font-size:12px;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+.toast.err{background:#A32D2D;color:#fff;}
+.toast.ok{background:#1A1A2E;color:#fff;}
 </style>
 </head>
 <body>
@@ -163,17 +166,20 @@ async function apiFetch(path, method='GET', body=null) {
 async function pushCondition(unitId, cond) {
   try {
     const r = await apiFetch('/inventory/v1/units/condition','PUT',{unitsConditions:[{id:unitId,condition:cond}]});
-    if(r && r.error) console.error('[pushCondition] Apaleo Fehler:', JSON.stringify(r));
-    else console.log('[pushCondition] OK', unitId, cond);
-  } catch(e) { console.error('[pushCondition] Exception:', e.message); }
+    if(r && r.error){ console.error('[pushCondition] Apaleo Fehler:', JSON.stringify(r)); return {ok:false,msg:r.error}; }
+    console.log('[pushCondition] OK', unitId, cond);
+    return {ok:true};
+  } catch(e) { console.error('[pushCondition] Exception:', e.message); return {ok:false,msg:e.message}; }
 }
+
+function showToast(msg,type){ S.toast={msg,type}; render(); clearTimeout(window._toastTo); window._toastTo=setTimeout(()=>{S.toast=null;render();},6000); }
 
 let S = {
   loggedIn:false, currentUser:null, loginError:'',
   role:'admin', prop:null, properties:[],
   units:{}, screen:'rooms', filter:'all',
   assignments:{}, conditions:{}, timers:{}, completedTimes:[],
-  selRoom:null, loadingProp:false, rtog:{1:true,2:true,3:true},
+  selRoom:null, loadingProp:false, rtog:{1:true,2:true,3:true}, toast:null,
 };
 let timerIv = null;
 
@@ -249,7 +255,8 @@ function buildApp(){
   <div class="prop-name">${S.prop?(PROPERTY_NAMES[S.prop]||S.prop):''}</div>
 </div>
 <div class="tabs">${tabs.map(t=>`<div class="tab${t.k===S.screen?' act':''}" onclick="ev_screen('${t.k}')">${t.l}</div>`).join('')}</div>
-<div class="body" id="hkc">${S.loadingProp?'<div class="screen-center"><div class="spinner"></div><p style="font-size:13px">Lade Zimmer…</p></div>':buildScreen()}</div>`;
+<div class="body" id="hkc">${S.loadingProp?'<div class="screen-center"><div class="spinner"></div><p style="font-size:13px">Lade Zimmer…</p></div>':buildScreen()}</div>
+${S.toast?`<div class="toast ${S.toast.type==='err'?'err':'ok'}">${S.toast.msg}</div>`:''}`;
 }
 
 function scrLogin(){
@@ -428,8 +435,11 @@ async function ev_inspect(k){
   S.conditions[k]='CleanToBeInspected'; S.selRoom=null;
   const u=(S.units[S.prop]||[]).find(x=>x.n===k.split('_').slice(1).join('_'));
   if(u) u.c='CleanToBeInspected';
-  if(u?.id) pushCondition(u.id,'CleanToBeInspected');
   render();
+  if(u?.id){
+    const r=await pushCondition(u.id,'CleanToBeInspected');
+    if(!r.ok) showToast('Achtung: Status wurde NICHT an Apaleo übertragen — '+(r.msg||'Unbekannter Fehler'),'err');
+  }
 }
 
 async function init(){
