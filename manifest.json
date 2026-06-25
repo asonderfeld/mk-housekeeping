@@ -1,0 +1,18 @@
+{
+  "name": "MK Housekeeping",
+  "short_name": "Housekeeping",
+  "description": "MK Hotels — Zimmer-Reinigungsmanagement",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1A1A2E",
+  "background_color": "#1A1A2E",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%231A1A2E'/><text x='256' y='340' font-size='280' text-anchor='middle' fill='white'>🏨</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
