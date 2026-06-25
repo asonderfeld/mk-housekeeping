@@ -166,7 +166,7 @@ async function apiFetch(path, method='GET', body=null) {
 
 async function pushCondition(unitId, cond) {
   try {
-    const r = await apiFetch('/inventory/v1/units/condition','PUT',{unitsConditions:[{id:unitId,condition:cond}]});
+    const r = await apiFetch('/inventory/v1/units/'+unitId,'PATCH',[{op:'replace',path:'/condition',value:cond}]);
     if(r && r.error){ console.error('[pushCondition] Apaleo Fehler:', JSON.stringify(r)); return {ok:false,msg:r.error}; }
     console.log('[pushCondition] OK', unitId, cond);
     return {ok:true};
@@ -311,6 +311,11 @@ function scrRooms(){
         <button class="action-btn btn-done" onclick="ev_inspect('${k}')">Reinigung abschließen → Inspektion</button>`
         :`<button class="action-btn btn-start" onclick="ev_startTimer('${k}')">▶ Reinigung starten</button>`}
         </div>`;
+      } else if(S.role==='admin'&&c==='CleanToBeInspected'){
+        panel=`<div class="panel"><h3>Zimmer ${u.n}</h3>
+        <div style="font-size:12px;color:#888;margin-bottom:6px;">Bereit zur Inspektion durch die Hausdame</div>
+        <button class="action-btn btn-done" onclick="ev_completeInspection('${k}')">✓ Inspektion abschließen → Clean</button>
+        </div>`;
       }
     }
   }
@@ -439,6 +444,17 @@ async function ev_inspect(k){
   render();
   if(u?.id){
     const r=await pushCondition(u.id,'CleanToBeInspected');
+    if(!r.ok) showToast('Achtung: Status wurde NICHT an Apaleo übertragen — '+(r.msg||'Unbekannter Fehler'),'err');
+  }
+}
+
+async function ev_completeInspection(k){
+  S.conditions[k]='Clean'; S.selRoom=null;
+  const u=(S.units[S.prop]||[]).find(x=>x.n===k.split('_').slice(1).join('_'));
+  if(u) u.c='Clean';
+  render();
+  if(u?.id){
+    const r=await pushCondition(u.id,'Clean');
     if(!r.ok) showToast('Achtung: Status wurde NICHT an Apaleo übertragen — '+(r.msg||'Unbekannter Fehler'),'err');
   }
 }
