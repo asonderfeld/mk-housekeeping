@@ -6,8 +6,7 @@
   "TEST_201": {
     "types": [
       "Hund",
-      "Schlafsofa",
-      "Babybett"
+      "Schlafsofa"
     ],
     "locked": false,
     "need": false
