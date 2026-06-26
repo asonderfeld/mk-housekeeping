@@ -11,18 +11,6 @@
     "pass": "AS"
   },
   {
-    "id": "LD",
-    "name": "Lena Dressler",
-    "role": "admin",
-    "props": [
-      "STGR",
-      "SPHMK"
-    ],
-    "bg": "#B5D4F4",
-    "tx": "#0C447C",
-    "pass": "LD2026"
-  },
-  {
     "id": "AW",
     "name": "Anna W.",
     "role": "housekeeper",
