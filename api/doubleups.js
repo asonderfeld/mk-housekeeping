@@ -49,11 +49,25 @@ async function getFile(owner) {
   return { sha: r.json.sha, data };
 }
 
-async function saveFile(owner, sha, data, message) {
-  const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
-  const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'PUT', { message, content, sha });
-  if (r.status !== 200 && r.status !== 201) throw new Error('doubleups.json konnte nicht gespeichert werden: ' + (r.json.message || r.status));
-  return r.json;
+// Schreibt mit Retry: liest bei jedem Versuch die aktuelle Datei + SHA neu ein
+// und wendet die Mutation darauf an. Verhindert "sha does not match"-Fehler,
+// wenn zwei Speichervorgänge (z.B. zwei schnelle Klicks) sich überlappen.
+async function saveWithRetry(owner, mutate, message, maxAttempts = 6) {
+  let lastMsg = '';
+  for (let i = 0; i < maxAttempts; i++) {
+    const { sha, data } = await getFile(owner);
+    const next = mutate(data);
+    const content = Buffer.from(JSON.stringify(next, null, 2)).toString('base64');
+    const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'PUT', { message, content, sha });
+    if (r.status === 200 || r.status === 201) return next;
+    lastMsg = (r.json && r.json.message) || String(r.status);
+    if (r.status === 409 || /does not match|sha/i.test(lastMsg)) {
+      await new Promise(res => setTimeout(res, 200 + i * 150));
+      continue;
+    }
+    throw new Error('doubleups.json konnte nicht gespeichert werden: ' + lastMsg);
+  }
+  throw new Error('doubleups.json: Konflikt nach mehreren Versuchen (gleichzeitige Änderung). ' + lastMsg);
 }
 
 module.exports = async (req, res) => {
@@ -76,19 +90,24 @@ module.exports = async (req, res) => {
 
     const { action, key, types, locked, need } = req.body || {};
     if (!key) { res.status(400).json({ error: '"key" fehlt' }); return; }
-    const { sha, data } = await getFile(owner);
 
     if (action === 'set') {
-      data[key] = { types: Array.isArray(types) ? types : [], locked: !!locked, need: !!need };
-      await saveFile(owner, sha, data, 'doubleups.json: set ' + key);
-      res.status(200).json({ ok: true, doubleUps: data });
+      const next = await saveWithRetry(owner, data => {
+        const copy = Object.assign({}, data);
+        copy[key] = { types: Array.isArray(types) ? types : [], locked: !!locked, need: !!need };
+        return copy;
+      }, 'doubleups.json: set ' + key);
+      res.status(200).json({ ok: true, doubleUps: next });
       return;
     }
 
     if (action === 'clear') {
-      delete data[key];
-      await saveFile(owner, sha, data, 'doubleups.json: clear ' + key);
-      res.status(200).json({ ok: true, doubleUps: data });
+      const next = await saveWithRetry(owner, data => {
+        const copy = Object.assign({}, data);
+        delete copy[key];
+        return copy;
+      }, 'doubleups.json: clear ' + key);
+      res.status(200).json({ ok: true, doubleUps: next });
       return;
     }
 
