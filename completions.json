@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "uid": "JOHANNA",
+    "prop": "TEST",
+    "room": "101",
+    "duration": 9,
+    "ts": 1782457014976
+  }
+]
