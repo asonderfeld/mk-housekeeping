@@ -47,11 +47,25 @@ async function getCompletionsFile(owner) {
   return { sha: r.json.sha, completions };
 }
 
-async function saveCompletionsFile(owner, sha, completions, message) {
-  const content = Buffer.from(JSON.stringify(completions, null, 2)).toString('base64');
-  const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'PUT', { message, content, sha });
-  if (r.status !== 200 && r.status !== 201) throw new Error('completions.json konnte nicht gespeichert werden: ' + (r.json.message || r.status));
-  return r.json;
+// Schreibt mit Retry: liest bei jedem Versuch die aktuelle Datei + SHA neu ein
+// und wendet die Mutation darauf an. Verhindert "sha does not match"-Fehler,
+// wenn zwei Speichervorgänge sich überlappen (z.B. zwei Housekeeper gleichzeitig).
+async function saveWithRetry(owner, mutate, message, maxAttempts = 6) {
+  let lastMsg = '';
+  for (let i = 0; i < maxAttempts; i++) {
+    const { sha, completions } = await getCompletionsFile(owner);
+    const next = mutate(completions);
+    const content = Buffer.from(JSON.stringify(next, null, 2)).toString('base64');
+    const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'PUT', { message, content, sha });
+    if (r.status === 200 || r.status === 201) return next;
+    lastMsg = (r.json && r.json.message) || String(r.status);
+    if (r.status === 409 || /does not match|sha/i.test(lastMsg)) {
+      await new Promise(res => setTimeout(res, 200 + i * 150));
+      continue;
+    }
+    throw new Error('completions.json konnte nicht gespeichert werden: ' + lastMsg);
+  }
+  throw new Error('completions.json: Konflikt nach mehreren Versuchen (gleichzeitige Änderung). ' + lastMsg);
 }
 
 module.exports = async (req, res) => {
@@ -78,10 +92,12 @@ module.exports = async (req, res) => {
       res.status(400).json({ error: 'entry (uid, prop, room, duration, ts) fehlt oder unvollständig.' }); return;
     }
 
-    const { sha, completions } = await getCompletionsFile(owner);
-    completions.push({ uid: entry.uid, prop: entry.prop, room: entry.room, duration: entry.duration, ts: entry.ts });
-    await saveCompletionsFile(owner, sha, completions, 'completions.json: add ' + entry.prop + '_' + entry.room + ' @ ' + entry.ts);
-    res.status(200).json({ ok: true, completions });
+    const next = await saveWithRetry(owner, completions => {
+      const copy = completions.slice();
+      copy.push({ uid: entry.uid, prop: entry.prop, room: entry.room, duration: entry.duration, ts: entry.ts });
+      return copy;
+    }, 'completions.json: add ' + entry.prop + '_' + entry.room + ' @ ' + entry.ts);
+    res.status(200).json({ ok: true, completions: next });
   } catch (e) {
     console.error('[completions]', e.message);
     res.status(500).json({ error: e.message });
