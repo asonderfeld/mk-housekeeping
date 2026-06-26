@@ -339,13 +339,15 @@ async function fetchPropertyData(propId) {
     apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=InHouse&pageSize=500'),
   ]);
   const today = new Date(); today.setHours(0,0,0,0);
+  const pad2 = n => String(n).padStart(2,'0');
+  const todayStr = today.getFullYear()+'-'+pad2(today.getMonth()+1)+'-'+pad2(today.getDate());
   const resMap = {};
   (rd.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) resMap[uid]=r; });
   return (ud.units||[]).map(u => {
     const res = resMap[u.id];
     const nights = res ? Math.max(0, Math.floor((today - new Date(res.arrival.split('T')[0])) / 86400000)) : 0;
-    const dep = res?.departure ? new Date(res.departure.split('T')[0]) : null;
-    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:dep?dep<=today:false, cm:res?.comment||'' };
+    const depStr = res?.departure ? res.departure.split('T')[0] : null;
+    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:depStr?depStr<=todayStr:false, cm:res?.comment||'' };
   });
 }
 
