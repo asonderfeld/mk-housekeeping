@@ -11,9 +11,7 @@
   },
   "EBO_004": {
     "types": [
-      "Schlafsofa",
-      "Babybett",
-      "Hund"
+      "Schlafsofa"
     ],
     "locked": false
   }
