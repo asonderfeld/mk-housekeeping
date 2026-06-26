@@ -62,6 +62,7 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 .tile.zr .sub{color:rgba(255,255,255,.8);}
 .tile .asgn{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:600;padding:1px 5px;border-radius:6px;white-space:nowrap;}
 .tile .du-badge{position:absolute;top:5px;left:5px;font-size:9px;font-weight:700;background:#59320f;color:#fff;padding:1px 5px;border-radius:6px;}
+.tile .dep-badge{position:absolute;bottom:3px;right:5px;font-size:12px;line-height:1;}
 .du-badge-inline{font-size:10px;background:#59320f;color:#fff;padding:2px 7px;border-radius:7px;font-weight:500;}
 .du-check-row{display:flex;align-items:center;gap:8px;padding:8px 0 10px;border-bottom:.5px solid #f0efe9;margin-bottom:6px;}
 .du-check-row label{font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;}
@@ -151,6 +152,11 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 .toast{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:50;padding:10px 13px;border-radius:10px;font-size:12px;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.25);}
 .toast.err{background:#A32D2D;color:#fff;}
 .toast.ok{background:#36505d;color:#fff;}
+.scope-row{display:flex;gap:6px;margin-bottom:10px;}
+.break-box{border-radius:10px;padding:10px 13px;text-align:center;margin-bottom:10px;border:1px solid;}
+.break-box.idle{background:#EAF3DE;border-color:#C0DD97;}
+.break-box.active{background:#FCEBEB;border-color:#F09595;}
+.break-val{font-size:22px;font-weight:700;color:#791F1F;letter-spacing:2px;font-variant-numeric:tabular-nums;margin:2px 0 6px;}
 </style>
 </head>
 <body>
@@ -208,10 +214,22 @@ async function loadDoubleUps(){
     if(r.ok){ const d = await r.json();
       if(d&&typeof d==='object'&&!Array.isArray(d)){
         S.doubleUp={};S.doubleUpType={};S.doubleUpLocked={};
-        Object.entries(d).forEach(([k,v])=>{ S.doubleUp[k]=true; S.doubleUpType[k]=Array.isArray(v?.types)?v.types:[]; S.doubleUpLocked[k]=!!v?.locked; });
+        Object.entries(d).forEach(([k,v])=>{
+          // Ältere Einträge hatten kein "need"-Feld — Existenz bedeutete damals immer "muss aufgedoppelt werden"
+          S.doubleUp[k]= v&&v.need!==undefined ? !!v.need : true;
+          S.doubleUpType[k]=Array.isArray(v?.types)?v.types:[];
+          S.doubleUpLocked[k]=!!v?.locked;
+        });
       }
     }
   }catch(e){ console.warn('[loadDoubleUps] konnte doubleups.json nicht laden', e.message); }
+}
+
+async function loadBreaks(){
+  try{
+    const r = await fetch('/breaks.json',{cache:'no-store'});
+    if(r.ok){ const d = await r.json(); if(Array.isArray(d)) S.breakLog=d; }
+  }catch(e){ console.warn('[loadBreaks] konnte breaks.json nicht laden', e.message); }
 }
 
 const LOGIN_KEY = 'mkhk_session';
@@ -258,12 +276,26 @@ async function pushCompletion(entry) {
   }catch(e){ return { ok:false, msg: e.message }; }
 }
 
-async function pushDoubleUp(action, key, types, locked) {
+async function pushDoubleUp(action, key, types, locked, need) {
   try{
     const res = await fetch('/api/doubleups', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ action, key, types, locked }),
+      body: JSON.stringify({ action, key, types, locked, need }),
+    });
+    const text = await res.text();
+    let json; try { json = text ? JSON.parse(text) : {}; } catch(e) { json = {}; }
+    if (!res.ok) return { ok:false, msg: json.error || ('HTTP ' + res.status) };
+    return { ok:true };
+  }catch(e){ return { ok:false, msg: e.message }; }
+}
+
+async function pushBreak(entry) {
+  try{
+    const res = await fetch('/api/breaks', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ action:'add', entry }),
     });
     const text = await res.text();
     let json; try { json = text ? JSON.parse(text) : {}; } catch(e) { json = {}; }
@@ -286,11 +318,14 @@ function showToast(msg,type){ S.toast={msg,type}; render(); clearTimeout(window.
 let S = {
   loggedIn:false, currentUser:null, loginError:'',
   role:'admin', prop:null, properties:[],
-  units:{}, screen:'rooms', filter:'all',
+  units:{}, screen:'rooms', filter:'all', hkScope:'mine',
   assignments:{}, conditions:{}, timers:{}, completedTimes:[], doubleUp:{}, doubleUpType:{}, doubleUpLocked:{},
+  breakActive:{}, breakLog:[],
   selRoom:null, loadingProp:false, rtog:{1:true,2:true,3:true}, toast:null, statsPeriod:'today', statsPerson:null,
   userFormOpen:false, userFormErr:'', userBusy:false,
 };
+const DOUBLEUP_TYPES=['Babybett','Schlafsofa','Hund'];
+const DOUBLEUP_ABBR={Babybett:'Baby',Schlafsofa:'Sofa',Hund:'Hund'};
 let timerIv = null;
 
 async function fetchProperties(allowedIds) {
@@ -321,6 +356,14 @@ const fmtDur  = s => String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).p
 const fmtDurL = s => { const m=Math.floor(s/60); return m<1?s+'s':m+' min '+s%60+'s'; };
 const fmtTime = ts => { const d=new Date(ts); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
 const tcls    = c => ({Clean:'clean',Dirty:'dirty',CleanToBeInspected:'inspect',OutOfService:'ooo',OutOfOrder:'ooo'}[c]||'dirty');
+const hasDU   = k => !!S.doubleUp[k] || (S.doubleUpType[k]||[]).length>0;
+
+function visibleHKs(){
+  const cu=S.currentUser;
+  if(!cu) return USERS.filter(u=>u.role==='housekeeper');
+  if(cu.props.includes('alle')) return USERS.filter(u=>u.role==='housekeeper');
+  return USERS.filter(u=>u.role==='housekeeper'&&(u.props.includes('alle')||u.props.some(p=>cu.props.includes(p))));
+}
 
 function getStats(p) {
   let dirty=0,zr=0,insp=0,clean=0;
@@ -331,13 +374,22 @@ function getHKs(p){ return USERS.filter(u=>u.role==='housekeeper'&&(u.props.incl
 function getWL(uid,p){ return Object.entries(S.assignments).filter(([k,v])=>v===uid&&k.startsWith(p+'_')).length; }
 function stopTimerIv(){ if(timerIv){clearInterval(timerIv);timerIv=null;} }
 function maybeTimerIv(){
-  if(!S.selRoom) return;
-  const k=rKey(S.prop,S.selRoom.n);
-  if(!S.timers[k]) return;
+  const k=S.selRoom?rKey(S.prop,S.selRoom.n):null;
+  const hasRoomTimer=k&&!!S.timers[k];
+  const hasBreak=S.currentUser&&!!S.breakActive[S.currentUser.id];
+  if(!hasRoomTimer&&!hasBreak) return;
   timerIv=setInterval(()=>{
-    const el=document.getElementById('live-timer');
-    if(!el||!S.timers[k]){stopTimerIv();return;}
-    el.textContent=fmtDur(Math.floor((Date.now()-S.timers[k].start)/1000));
+    let alive=false;
+    if(hasRoomTimer){
+      const el=document.getElementById('live-timer');
+      if(el&&S.timers[k]){ el.textContent=fmtDur(Math.floor((Date.now()-S.timers[k].start)/1000)); alive=true; }
+    }
+    const ba=S.currentUser&&S.breakActive[S.currentUser.id];
+    if(ba){
+      const el2=document.getElementById('live-break');
+      if(el2){ el2.textContent=fmtDur(Math.floor((Date.now()-ba.start)/1000)); alive=true; }
+    }
+    if(!alive) stopTimerIv();
   },1000);
 }
 
@@ -392,6 +444,17 @@ function buildScreen(){
   return '';
 }
 
+function breakBar(){
+  if(S.role!=='housekeeper'||!S.currentUser) return '';
+  const active=S.breakActive[S.currentUser.id];
+  const el=active?Math.floor((Date.now()-active.start)/1000):0;
+  return `<div class="break-box ${active?'active':'idle'}">
+    <div style="font-size:11px;color:${active?'#791F1F':'#27500A'};">${active?'Pause läuft':'Aktuell keine Pause'}</div>
+    ${active?`<div class="break-val" id="live-break">${fmtDur(el)}</div>`:''}
+    <button class="action-btn ${active?'btn-done':'btn-start'}" style="margin-top:${active?'0':'8px'};" onclick="ev_toggleBreak()">${active?'⏹ Pause beenden':'☕ Pause starten'}</button>
+  </div>`;
+}
+
 function scrRooms(){
   const us=S.units[S.prop]||[], st=getStats(S.prop);
   let fil=us;
@@ -399,44 +462,53 @@ function scrRooms(){
   else if(S.filter==='zr') fil=us.filter(u=>isZR(u)&&getCond(u,S.prop)==='Dirty');
   else if(S.filter==='inspect') fil=us.filter(u=>getCond(u,S.prop)==='CleanToBeInspected');
   else if(S.filter==='clean')   fil=us.filter(u=>getCond(u,S.prop)==='Clean');
-  else if(S.filter==='doubleUp') fil=us.filter(u=>S.doubleUp[rKey(S.prop,u.n)]);
+  else if(S.filter==='doubleUp') fil=us.filter(u=>hasDU(rKey(S.prop,u.n)));
+
+  if(S.role==='housekeeper'&&S.hkScope==='mine'&&S.currentUser){
+    fil=fil.filter(u=>S.assignments[rKey(S.prop,u.n)]===S.currentUser.id);
+  }
 
   let panel='';
   if(S.selRoom){
     const u=us.find(x=>x.n===S.selRoom.n);
     if(u){
       const c=getCond(u,S.prop),zr=isZR(u)&&c==='Dirty',k=rKey(S.prop,u.n);
-      if(S.role==='admin'&&(c==='Dirty'||zr)){
-        const hks=getHKs(S.prop);
-        panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}</h3>
-        <div class="du-check-row"><label><input type="checkbox" ${S.doubleUp[k]?'checked':''} onclick="ev_toggleDoubleUp('${k}')"> Zimmer muss aufgedoppelt werden</label></div>
-        ${S.doubleUp[k]?`<div class="du-type-row">${['Babybett','Schlafsofa'].map(t=>`<button class="du-type-btn${(S.doubleUpType[k]||[]).includes(t)?' act':''}" onclick="ev_setDoubleUpType('${k}','${t}')">${t}</button>`).join('')}</div>`:''}
-        ${hks.length?hks.map(h=>`<div class="hk-row"><div class="hk-info">
-          <div class="avatar" style="width:30px;height:30px;font-size:11px;background:${h.bg};color:${h.tx}">${h.id}</div>
-          <div><div class="hk-name">${h.name}</div><div class="hk-load">${getWL(h.id,S.prop)} Zimmer</div></div></div>
-          <button class="asgn-btn${S.assignments[k]===h.id?' assigned':''}" onclick="ev_assign('${k}','${h.id}')">${S.assignments[k]===h.id?'✓ Zugeteilt':'Zuweisen'}</button>
-        </div>`).join(''):'<p style="font-size:12px;color:#888">Keine Zimmermädchen konfiguriert.</p>'}
+      if(S.role==='admin'){
+        const duBlock=`<div class="du-check-row"><label><input type="checkbox" ${S.doubleUp[k]?'checked':''} onclick="ev_toggleDoubleUp('${k}')"> Zimmer muss aufgedoppelt werden</label></div>
+        <div class="du-type-row">${DOUBLEUP_TYPES.map(t=>`<button class="du-type-btn${(S.doubleUpType[k]||[]).includes(t)?' act':''}" onclick="ev_setDoubleUpType('${k}','${t}')">${t}</button>`).join('')}</div>`;
+        let actionBlock='';
+        if(c==='Dirty'||zr){
+          const hks=getHKs(S.prop);
+          actionBlock=hks.length?hks.map(h=>`<div class="hk-row"><div class="hk-info">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px;background:${h.bg};color:${h.tx}">${h.id}</div>
+            <div><div class="hk-name">${h.name}</div><div class="hk-load">${getWL(h.id,S.prop)} Zimmer</div></div></div>
+            <button class="asgn-btn${S.assignments[k]===h.id?' assigned':''}" onclick="ev_assign('${k}','${h.id}')">${S.assignments[k]===h.id?'✓ Zugeteilt':'Zuweisen'}</button>
+          </div>`).join(''):'<p style="font-size:12px;color:#888">Keine Zimmermädchen konfiguriert.</p>';
+        } else if(c==='CleanToBeInspected'){
+          actionBlock=`<div style="font-size:12px;color:#888;margin:6px 0;">Bereit zur Inspektion durch die Hausdame</div>
+          <button class="action-btn btn-done" onclick="ev_completeInspection('${k}')">✓ Inspektion abschließen → Clean</button>`;
+        }
+        panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${u.dT?' 🧳':''}</h3>
+        ${duBlock}
+        ${actionBlock}
         </div>`;
       } else if(S.role==='housekeeper'&&(c==='Dirty'||zr)){
         const has=!!S.timers[k];
         const el=has?Math.floor((Date.now()-S.timers[k].start)/1000):0;
-        panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${S.doubleUp[k]?` <span class="du-badge-inline">Aufdoppeln${(S.doubleUpType[k]||[]).length?' · '+S.doubleUpType[k].join(' + '):''}</span>`:''}</h3>
+        panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${hasDU(k)?` <span class="du-badge-inline">${S.doubleUp[k]?'Aufdoppeln':'Ausstattung'}${(S.doubleUpType[k]||[]).length?' · '+S.doubleUpType[k].join(' + '):''}</span>`:''}</h3>
         <div style="font-size:12px;color:#888;margin-bottom:6px;">${zr?'Zwangsreinigung fällig':'Reguläre Reinigung'}</div>
         ${has?`<div class="timer-box"><div class="timer-lbl">Reinigungszeit läuft</div><div class="timer-val" id="live-timer">${fmtDur(el)}</div></div>
         ${u.cm?`<div class="res-comment-box"><div class="res-comment-lbl">📋 Reservierungskommentar</div><div class="res-comment-txt">${u.cm}</div></div>`:''}
         <button class="action-btn btn-done" onclick="ev_inspect('${k}')">Reinigung abschließen → Inspektion</button>`
         :`<button class="action-btn btn-start" onclick="ev_startTimer('${k}')">▶ Reinigung starten</button>`}
         </div>`;
-      } else if(S.role==='admin'&&c==='CleanToBeInspected'){
-        panel=`<div class="panel"><h3>Zimmer ${u.n}</h3>
-        <div style="font-size:12px;color:#888;margin-bottom:6px;">Bereit zur Inspektion durch die Hausdame</div>
-        <button class="action-btn btn-done" onclick="ev_completeInspection('${k}')">✓ Inspektion abschließen → Clean</button>
-        </div>`;
       }
     }
   }
 
-  return `${S.selRoom?panel:`<div class="stat-row">
+  return `${breakBar()}
+  ${S.role==='housekeeper'?`<div class="scope-row"><button class="fbtn${S.hkScope==='mine'?' act':''}" onclick="ev_hkScope('mine')">Nur meine Zimmer</button><button class="fbtn${S.hkScope==='all'?' act':''}" onclick="ev_hkScope('all')">Alle Zimmer</button></div>`:''}
+  ${S.selRoom?panel:`<div class="stat-row">
     <div class="stat${st.zr>0?' zr':''}"><div class="n">${st.zr>0?st.zr:st.dirty}</div><div class="l">${st.zr>0?'ZR fällig':'Dirty'}</div></div>
     <div class="stat"><div class="n">${st.insp}</div><div class="l">Inspektion</div></div>
     <div class="stat"><div class="n">${st.clean}</div><div class="l">Clean</div></div>
@@ -449,8 +521,9 @@ function scrRooms(){
     const sub=running?'läuft…':zr?`ZR·${u.nights}n`:c==='Dirty'&&u.o?`Stay·${u.nights}n`:c==='CleanToBeInspected'?'Prüfen':(c==='OutOfService'||c==='OutOfOrder')?'Gesperrt':'';
     return`<div class="tile ${tc}${S.selRoom?.n===u.n?' sel':''}" onclick="ev_sel('${u.n}')">
       ${running?'<div class="timer-dot"></div>':''}
-      ${S.doubleUp[k]?`<div class="du-badge">2x${(S.doubleUpType[k]||[]).length?' '+S.doubleUpType[k].map(t=>t==='Babybett'?'Baby':'Sofa').join('+'):''}</div>`:''}
+      ${hasDU(k)?`<div class="du-badge">${S.doubleUp[k]?'2x':''}${(S.doubleUpType[k]||[]).length?' '+S.doubleUpType[k].map(t=>DOUBLEUP_ABBR[t]||t).join('+'):''}</div>`:''}
       <div class="rnum">${u.n}</div><div class="sub">${sub}</div>
+      ${u.dT?'<div class="dep-badge">🧳</div>':''}
       ${au?`<div class="asgn" style="background:${au.bg};color:${au.tx}">${au.id}</div>`:''}
     </div>`;
   }).join('')}</div>
@@ -460,6 +533,7 @@ function scrRooms(){
     <div class="leg"><div class="leg-dot" style="background:#FAC775"></div>Aktiv</div>
     <div class="leg"><div class="leg-dot" style="background:#85B7EB"></div>Inspektion</div>
     <div class="leg"><div class="leg-dot" style="background:#97C459"></div>Clean</div>
+    <div class="leg">🧳 Abreise</div>
   </div>`;
 }
 
@@ -474,9 +548,10 @@ function scrStats(){
   const period=S.statsPeriod||'today';
   const from=statsFrom(period);
   const all=S.completedTimes.filter(t=>t.ts>=from);
+  const allBreaks=S.breakLog.filter(b=>b.start>=from);
   const tot=all.length,avg=tot?Math.round(all.reduce((s,t)=>s+t.duration,0)/tot):0;
   const fast=tot?Math.min(...all.map(t=>t.duration)):0;
-  const hks=USERS.filter(u=>u.role==='housekeeper');
+  const hks=visibleHKs();
   const maxA=Math.max(1,...hks.map(h=>{const ht=all.filter(t=>t.uid===h.id);return ht.length?Math.round(ht.reduce((s,t)=>s+t.duration,0)/ht.length):0;}));
   return `<div class="filter-row">${Object.entries(STATS_PERIODS).map(([k,l])=>`<button class="fbtn${period===k?' act':''}" onclick="ev_statsPeriod('${k}')">${l}</button>`).join('')}</div>
   <div class="stat-row">
@@ -486,17 +561,24 @@ function scrStats(){
   </div>
   <div class="sec-title">Leistung ${STATS_PERIODS[period].toLowerCase()}</div>
   ${hks.map(h=>{const ht=all.filter(t=>t.uid===h.id),cnt=ht.length,a=cnt?Math.round(ht.reduce((s,t)=>s+t.duration,0)/cnt):0,pct=a?Math.round(a/maxA*100):0;
+  const hb=allBreaks.filter(b=>b.uid===h.id),bTotal=hb.reduce((s,b)=>s+b.duration,0);
   const open=S.statsPerson===h.id;
+  const timeline=[...ht.map(t=>({type:'clean',ts:t.ts,t})),...hb.map(b=>({type:'break',ts:b.end,b}))].sort((x,y)=>y.ts-x.ts);
   return`<div class="stat-card" style="cursor:pointer;" onclick="ev_statsPerson('${h.id}')"><div style="display:flex;align-items:center;justify-content:space-between;">
     <div style="display:flex;align-items:center;gap:9px;"><div class="avatar" style="width:34px;height:34px;font-size:12px;background:${h.bg};color:${h.tx}">${h.id}</div>
     <div><div style="font-size:13px;font-weight:500;">${h.name}</div><div style="font-size:11px;color:#888;">${h.props.join(', ')}</div></div></div>
     <div style="text-align:right;"><div style="font-size:14px;font-weight:600;">${cnt} Zimmer</div><div style="font-size:11px;color:#888;">Ø ${a?fmtDurL(a):'—'}</div></div>
   </div>${a?`<div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${h.bg};"></div></div>`:''}
-  ${open?`<div class="hk-log-list">${cnt?ht.slice().sort((x,y)=>y.ts-x.ts).map(t=>`<div class="hk-log-row">
-      <span class="hk-log-room">Zi. ${t.room} · ${t.prop}</span>
-      <span class="hk-log-time">${fmtTime(t.ts-t.duration*1000)} – ${fmtTime(t.ts)}</span>
-      <span class="hk-log-dur">${fmtDurL(t.duration)}</span>
-    </div>`).join(''):`<p style="font-size:12px;color:#888;text-align:center;padding:8px 0;">Keine Reinigungen ${STATS_PERIODS[period].toLowerCase()}.</p>`}</div>`:''}
+  <div style="font-size:11px;color:#888;margin-top:6px;">☕ ${hb.length} Pausen${bTotal?' · '+fmtDurL(bTotal):''}</div>
+  ${open?`<div class="hk-log-list">${timeline.length?timeline.map(e=>e.type==='clean'?`<div class="hk-log-row">
+      <span class="hk-log-room">Zi. ${e.t.room} · ${e.t.prop}</span>
+      <span class="hk-log-time">${fmtTime(e.t.ts-e.t.duration*1000)} – ${fmtTime(e.t.ts)}</span>
+      <span class="hk-log-dur">${fmtDurL(e.t.duration)}</span>
+    </div>`:`<div class="hk-log-row">
+      <span class="hk-log-room">☕ Pause</span>
+      <span class="hk-log-time">${fmtTime(e.b.start)} – ${fmtTime(e.b.end)}</span>
+      <span class="hk-log-dur">${fmtDurL(e.b.duration)}</span>
+    </div>`).join(''):`<p style="font-size:12px;color:#888;text-align:center;padding:8px 0;">Keine Einträge ${STATS_PERIODS[period].toLowerCase()}.</p>`}</div>`:''}
   </div>`;}).join('')}
   ${all.length?`<div class="sec-title" style="margin-top:12px;">Letzte Abschlüsse</div>
   <div class="stat-card">${all.slice(-8).reverse().map(t=>{const u=USERS.find(x=>x.id===t.uid);
@@ -505,8 +587,8 @@ function scrStats(){
 }
 
 function scrDoubleUps(){
-  const keys=Object.keys(S.doubleUp);
-  if(!keys.length) return `<p style="font-size:12px;color:#888;text-align:center;padding:30px 0;">Aktuell ist kein Zimmer als „aufgedoppelt" markiert.</p>`;
+  const keys=Array.from(new Set([...Object.keys(S.doubleUp),...Object.keys(S.doubleUpType)])).filter(hasDU);
+  if(!keys.length) return `<p style="font-size:12px;color:#888;text-align:center;padding:30px 0;">Aktuell ist kein Zimmer als „aufgedoppelt" oder mit Sonderausstattung markiert.</p>`;
   const rows=keys.map(k=>{
     const i=k.indexOf('_'); const prop=i>-1?k.slice(0,i):k; const room=i>-1?k.slice(i+1):'';
     return { k, prop, room, types:S.doubleUpType[k]||[] };
@@ -539,7 +621,7 @@ function scrTeam(){
     <div><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:500;">${u.name}</span><span class="role-pill ra">Admin</span></div>
     <div style="font-size:11px;color:#888;margin-top:2px;">Vollzugriff</div></div></div></div>`).join('')}
   <div class="sec-title" style="margin-top:14px;">Zimmermädchen</div>
-  ${USERS.filter(u=>u.role==='housekeeper').map(u=>`<div class="team-card"><div style="display:flex;align-items:center;gap:10px;">
+  ${visibleHKs().map(u=>`<div class="team-card"><div style="display:flex;align-items:center;gap:10px;">
     <div class="avatar" style="width:38px;height:38px;font-size:13px;background:${u.bg};color:${u.tx}">${u.id}</div>
     <div style="flex:1;"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;"><span style="font-size:14px;font-weight:500;">${u.name}</span><span class="role-pill rh">Housekeeper</span></div>
     <div style="font-size:11px;color:#888;margin-top:2px;">${u.props.join(', ')} · ${tt.filter(t=>t.uid===u.id).length} heute fertig · ${getWL(u.id,S.prop||'')} zugeteilt</div></div></div></div>`).join('')}`;
@@ -573,7 +655,7 @@ function scrUsers(){
   <div class="sec-title">Administratoren</div>
   ${USERS.filter(u=>u.role==='admin').map(u=>userRow(u)).join('')}
   <div class="sec-title" style="margin-top:14px;">Zimmermädchen</div>
-  ${USERS.filter(u=>u.role==='housekeeper').map(u=>userRow(u)).join('')}`;
+  ${visibleHKs().map(u=>userRow(u)).join('')}`;
 }
 
 function userRow(u){
@@ -643,7 +725,7 @@ function ev_login(){
 }
 function doLogin(user){
   S.loggedIn=true; S.currentUser=user; S.role=user.role; S.loginError='';
-  S.prop=null; S.properties=[]; S.units={}; S.selRoom=null; S.screen='rooms'; S.filter='all';
+  S.prop=null; S.properties=[]; S.units={}; S.selRoom=null; S.screen='rooms'; S.filter='all'; S.hkScope='mine';
   try{ localStorage.setItem(LOGIN_KEY,user.id); }catch(e){}
   init();
 }
@@ -662,32 +744,55 @@ async function ev_prop(p){
 }
 function ev_screen(s){ S.screen=s;S.selRoom=null;render(); }
 function ev_filter(f){ S.filter=f;render(); }
+function ev_hkScope(s){ S.hkScope=s; render(); }
 function ev_statsPeriod(p){ S.statsPeriod=p; document.getElementById('hkc').innerHTML=buildScreen(); }
 function ev_statsPerson(uid){ S.statsPerson=S.statsPerson===uid?null:uid; document.getElementById('hkc').innerHTML=buildScreen(); }
 function ev_tog(id){ S.rtog[id]=!S.rtog[id];render(); }
 function ev_sel(n){ S.selRoom=S.selRoom?.n===n?null:{n,prop:S.prop}; stopTimerIv(); document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv(); }
 function ev_assign(k,uid){ S.assignments[k]===uid?delete S.assignments[k]:(S.assignments[k]=uid); document.getElementById('hkc').innerHTML=buildScreen(); }
-function ev_toggleDoubleUp(k){
-  if(S.doubleUp[k]){
+
+function persistDoubleUp(k){
+  const need=!!S.doubleUp[k], types=S.doubleUpType[k]||[], locked=!!S.doubleUpLocked[k];
+  if(!need&&!types.length){
     delete S.doubleUp[k]; delete S.doubleUpType[k]; delete S.doubleUpLocked[k];
     pushDoubleUp('clear',k).then(r=>{ if(!r.ok) showToast('Achtung: Aufdoppeln-Status NICHT gespeichert — '+(r.msg||'Unbekannter Fehler'),'err'); });
   } else {
-    S.doubleUp[k]=true; S.doubleUpType[k]=[]; S.doubleUpLocked[k]=false;
-    pushDoubleUp('set',k,[],false).then(r=>{ if(!r.ok) showToast('Achtung: Aufdoppeln-Status NICHT gespeichert — '+(r.msg||'Unbekannter Fehler'),'err'); });
+    pushDoubleUp('set',k,types,locked,need).then(r=>{ if(!r.ok) showToast('Achtung: Aufdoppeln-Status NICHT gespeichert — '+(r.msg||'Unbekannter Fehler'),'err'); });
   }
+}
+function ev_toggleDoubleUp(k){
+  S.doubleUp[k]=!S.doubleUp[k];
+  if(S.doubleUp[k]&&!S.doubleUpType[k]) S.doubleUpType[k]=[];
+  persistDoubleUp(k);
   document.getElementById('hkc').innerHTML=buildScreen();
 }
 function ev_setDoubleUpType(k,t){
   const a=S.doubleUpType[k]||(S.doubleUpType[k]=[]); const i=a.indexOf(t); i>-1?a.splice(i,1):a.push(t);
-  pushDoubleUp('set',k,a,!!S.doubleUpLocked[k]).then(r=>{ if(!r.ok) showToast('Achtung: Aufdoppeln-Status NICHT gespeichert — '+(r.msg||'Unbekannter Fehler'),'err'); });
+  persistDoubleUp(k);
   document.getElementById('hkc').innerHTML=buildScreen();
 }
 function ev_startTimer(k){
-  if(S.doubleUp[k]&&S.doubleUpLocked[k]){
+  if(hasDU(k)&&S.doubleUpLocked[k]){
     delete S.doubleUp[k]; delete S.doubleUpType[k]; delete S.doubleUpLocked[k];
     pushDoubleUp('clear',k).then(r=>{ if(!r.ok) showToast('Achtung: Aufdoppeln-Status NICHT zurückgesetzt — '+(r.msg||'Unbekannter Fehler'),'err'); });
   }
   S.timers[k]={start:Date.now(),uid:S.currentUser.id}; document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv();
+}
+async function ev_toggleBreak(){
+  const uid=S.currentUser.id;
+  const active=S.breakActive[uid];
+  if(active){
+    const end=Date.now(),duration=Math.floor((end-active.start)/1000);
+    delete S.breakActive[uid];
+    const entry={uid,start:active.start,end,duration};
+    S.breakLog.push(entry);
+    stopTimerIv(); document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv();
+    const r=await pushBreak(entry);
+    if(!r.ok) showToast('Achtung: Pause wurde NICHT dauerhaft gespeichert — '+(r.msg||'Unbekannter Fehler'),'err');
+  } else {
+    S.breakActive[uid]={start:Date.now()};
+    stopTimerIv(); document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv();
+  }
 }
 async function ev_inspect(k){
   let entry=null;
@@ -695,9 +800,9 @@ async function ev_inspect(k){
     entry={uid:S.timers[k].uid,prop:pts[0],room:pts.slice(1).join('_'),duration:dur,ts:Date.now()};
     S.completedTimes.push(entry); delete S.timers[k]; }
   S.conditions[k]='CleanToBeInspected'; S.selRoom=null;
-  if(S.doubleUp[k]&&!S.doubleUpLocked[k]){
+  if(hasDU(k)&&!S.doubleUpLocked[k]){
     S.doubleUpLocked[k]=true;
-    pushDoubleUp('set',k,S.doubleUpType[k]||[],true).then(r=>{ if(!r.ok) showToast('Achtung: Aufdoppeln-Status NICHT gespeichert — '+(r.msg||'Unbekannter Fehler'),'err'); });
+    pushDoubleUp('set',k,S.doubleUpType[k]||[],true,!!S.doubleUp[k]).then(r=>{ if(!r.ok) showToast('Achtung: Aufdoppeln-Status NICHT gespeichert — '+(r.msg||'Unbekannter Fehler'),'err'); });
   }
   const u=(S.units[S.prop]||[]).find(x=>x.n===k.split('_').slice(1).join('_'));
   if(u) u.c='CleanToBeInspected';
@@ -724,7 +829,7 @@ async function ev_completeInspection(k){
 }
 
 async function init(){
-  await Promise.all([loadUsers(), loadCompletions(), loadDoubleUps()]);
+  await Promise.all([loadUsers(), loadCompletions(), loadDoubleUps(), loadBreaks()]);
   if(!S.loggedIn){
     try{
       const savedId=localStorage.getItem(LOGIN_KEY);
