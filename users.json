@@ -46,18 +46,6 @@
     "pass": "VM2026"
   },
   {
-    "id": "SR",
-    "name": "Sandra R.",
-    "role": "housekeeper",
-    "props": [
-      "BER",
-      "FRA"
-    ],
-    "bg": "#FBEAF0",
-    "tx": "#993556",
-    "pass": "SR2026"
-  },
-  {
     "id": "HM",
     "name": "Hana M.",
     "role": "housekeeper",
