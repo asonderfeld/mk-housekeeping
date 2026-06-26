@@ -254,7 +254,7 @@ async function fetchPropertyData(propId) {
     const res = resMap[u.id];
     const nights = res ? Math.max(0, Math.floor((today - new Date(res.arrival.split('T')[0])) / 86400000)) : 0;
     const dep = res?.departure ? new Date(res.departure.split('T')[0]) : null;
-    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:dep?dep<=today:false, cm:res?.guestComment||'' };
+    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:dep?dep<=today:false, cm:res?.comment||'' };
   });
 }
 
