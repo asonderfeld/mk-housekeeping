@@ -39,8 +39,6 @@
   },
   "ARNS_12": {
     "types": [
-      "Babybett",
-      "Schlafsofa",
       "Hund"
     ],
     "locked": false,
