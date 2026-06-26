@@ -4,10 +4,9 @@
     "locked": true
   },
   "TEST_201": {
-    "types": [
-      "Schlafsofa"
-    ],
-    "locked": false
+    "types": [],
+    "locked": false,
+    "need": true
   },
   "EBO_006": {
     "types": [
