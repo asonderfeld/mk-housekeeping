@@ -36,10 +36,5 @@
     ],
     "locked": false,
     "need": false
-  },
-  "BER_300": {
-    "types": [],
-    "locked": false,
-    "need": true
   }
 }
