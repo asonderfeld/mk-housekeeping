@@ -8,5 +8,12 @@
       "Schlafsofa"
     ],
     "locked": false
+  },
+  "EBO_006": {
+    "types": [
+      "Babybett"
+    ],
+    "locked": false,
+    "need": false
   }
 }
