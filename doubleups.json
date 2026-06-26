@@ -40,7 +40,8 @@
   "BER_300": {
     "types": [
       "Babybett",
-      "Schlafsofa"
+      "Schlafsofa",
+      "Hund"
     ],
     "locked": false,
     "need": false
