@@ -5,8 +5,7 @@
   },
   "TEST_201": {
     "types": [
-      "Hund",
-      "Schlafsofa"
+      "Hund"
     ],
     "locked": false,
     "need": false
