@@ -127,5 +127,17 @@
     ],
     "bg": "#E6F1FB",
     "tx": "#185FA5"
+  },
+  {
+    "id": "IVONNE",
+    "name": "Ivonne Bachem",
+    "pass": "Hotel2016",
+    "role": "admin",
+    "props": [
+      "SPHMK",
+      "TEST"
+    ],
+    "bg": "#F5C4B3",
+    "tx": "#712B13"
   }
 ]
