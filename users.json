@@ -11,18 +11,6 @@
     "pass": "AS"
   },
   {
-    "id": "AW",
-    "name": "Anna W.",
-    "role": "housekeeper",
-    "props": [
-      "STGR",
-      "SPHMK"
-    ],
-    "bg": "#9FE1CB",
-    "tx": "#085041",
-    "pass": "AW2026"
-  },
-  {
     "id": "EW",
     "name": "Eva W.",
     "role": "housekeeper",
