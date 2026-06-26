@@ -4,7 +4,9 @@
     "locked": true
   },
   "TEST_201": {
-    "types": [],
+    "types": [
+      "Hund"
+    ],
     "locked": false,
     "need": true
   },
