@@ -45,11 +45,27 @@ async function getUsersFile(owner) {
   return { sha: r.json.sha, users: JSON.parse(content) };
 }
 
-async function saveUsersFile(owner, sha, users, message) {
-  const content = Buffer.from(JSON.stringify(users, null, 2)).toString('base64');
-  const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'PUT', { message, content, sha });
-  if (r.status !== 200 && r.status !== 201) throw new Error('users.json konnte nicht gespeichert werden: ' + (r.json.message || r.status));
-  return r.json;
+// Schreibt mit Retry: liest bei jedem Versuch die aktuelle Datei + SHA neu ein
+// und wendet die Mutation darauf an. Verhindert "sha does not match"-Fehler,
+// wenn zwei Speichervorgänge sich überlappen. mutate(users) gibt entweder das
+// neue Array zurück, oder {error:"..."} um den Vorgang ohne Schreiben abzubrechen.
+async function saveWithRetry(owner, mutate, message, maxAttempts = 6) {
+  let lastMsg = '';
+  for (let i = 0; i < maxAttempts; i++) {
+    const { sha, users } = await getUsersFile(owner);
+    const result = mutate(users);
+    if (result && result.error) return result;
+    const content = Buffer.from(JSON.stringify(result, null, 2)).toString('base64');
+    const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'PUT', { message, content, sha });
+    if (r.status === 200 || r.status === 201) return result;
+    lastMsg = (r.json && r.json.message) || String(r.status);
+    if (r.status === 409 || /does not match|sha/i.test(lastMsg)) {
+      await new Promise(res => setTimeout(res, 200 + i * 150));
+      continue;
+    }
+    throw new Error('users.json konnte nicht gespeichert werden: ' + lastMsg);
+  }
+  throw new Error('users.json: Konflikt nach mehreren Versuchen (gleichzeitige Änderung). ' + lastMsg);
 }
 
 module.exports = async (req, res) => {
@@ -71,37 +87,44 @@ module.exports = async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
 
     const { action, user, id } = req.body || {};
-    const { sha, users } = await getUsersFile(owner);
 
     if (action === 'create') {
       if (!user || !user.id || !user.pass || !user.name || !user.role) {
         res.status(400).json({ error: 'Benutzername, Name, Passwort und Rolle sind erforderlich.' }); return;
       }
-      if (users.some(u => u.id.toLowerCase() === String(user.id).toLowerCase())) {
-        res.status(409).json({ error: 'Dieser Benutzername existiert bereits.' }); return;
-      }
-      users.push(user);
-      await saveUsersFile(owner, sha, users, 'users.json: add ' + user.id);
-      res.status(200).json({ ok: true, users });
+      const result = await saveWithRetry(owner, users => {
+        if (users.some(u => u.id.toLowerCase() === String(user.id).toLowerCase())) {
+          return { error: 'Dieser Benutzername existiert bereits.' };
+        }
+        return users.concat([user]);
+      }, 'users.json: add ' + user.id);
+      if (result && result.error) { res.status(409).json({ error: result.error }); return; }
+      res.status(200).json({ ok: true, users: result });
       return;
     }
 
     if (action === 'delete') {
       if (!id) { res.status(400).json({ error: '"id" fehlt' }); return; }
-      const next = users.filter(u => u.id !== id);
-      if (next.length === users.length) { res.status(404).json({ error: 'User nicht gefunden' }); return; }
-      await saveUsersFile(owner, sha, next, 'users.json: remove ' + id);
-      res.status(200).json({ ok: true, users: next });
+      const result = await saveWithRetry(owner, users => {
+        const next = users.filter(u => u.id !== id);
+        if (next.length === users.length) return { error: 'User nicht gefunden' };
+        return next;
+      }, 'users.json: remove ' + id);
+      if (result && result.error) { res.status(404).json({ error: result.error }); return; }
+      res.status(200).json({ ok: true, users: result });
       return;
     }
 
     if (action === 'update') {
       if (!user || !user.id) { res.status(400).json({ error: 'user.id fehlt' }); return; }
-      let found = false;
-      const next = users.map(u => { if (u.id === user.id) { found = true; return Object.assign({}, u, user); } return u; });
-      if (!found) { res.status(404).json({ error: 'User nicht gefunden' }); return; }
-      await saveUsersFile(owner, sha, next, 'users.json: update ' + user.id);
-      res.status(200).json({ ok: true, users: next });
+      const result = await saveWithRetry(owner, users => {
+        let found = false;
+        const next = users.map(u => { if (u.id === user.id) { found = true; return Object.assign({}, u, user); } return u; });
+        if (!found) return { error: 'User nicht gefunden' };
+        return next;
+      }, 'users.json: update ' + user.id);
+      if (result && result.error) { res.status(404).json({ error: result.error }); return; }
+      res.status(200).json({ ok: true, users: result });
       return;
     }
 
