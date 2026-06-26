@@ -74,12 +74,12 @@ module.exports = async (req, res) => {
 
     if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
 
-    const { action, key, types, locked } = req.body || {};
+    const { action, key, types, locked, need } = req.body || {};
     if (!key) { res.status(400).json({ error: '"key" fehlt' }); return; }
     const { sha, data } = await getFile(owner);
 
     if (action === 'set') {
-      data[key] = { types: Array.isArray(types) ? types : [], locked: !!locked };
+      data[key] = { types: Array.isArray(types) ? types : [], locked: !!locked, need: !!need };
       await saveFile(owner, sha, data, 'doubleups.json: set ' + key);
       res.status(200).json({ ok: true, doubleUps: data });
       return;
