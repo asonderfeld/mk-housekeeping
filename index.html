@@ -65,6 +65,9 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 .du-badge-inline{font-size:10px;background:#59320f;color:#fff;padding:2px 7px;border-radius:7px;font-weight:500;}
 .du-check-row{display:flex;align-items:center;gap:8px;padding:8px 0 10px;border-bottom:.5px solid #f0efe9;margin-bottom:6px;}
 .du-check-row label{font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;}
+.du-type-row{display:flex;gap:8px;padding:0 0 10px;border-bottom:.5px solid #f0efe9;margin-bottom:6px;}
+.du-type-btn{font-size:12px;padding:5px 12px;border-radius:7px;border:1px solid #ddd9cc;background:#fff;color:#444;cursor:pointer;}
+.du-type-btn.act{background:#59320f;color:#fff;border-color:#59320f;}
 .timer-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#EF9F27;animation:pulse 1.2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
 .panel{background:#fff;border-radius:12px;border:.5px solid #e8e7e4;padding:13px;margin-bottom:10px;}
@@ -225,7 +228,7 @@ let S = {
   loggedIn:false, currentUser:null, loginError:'',
   role:'admin', prop:null, properties:[],
   units:{}, screen:'rooms', filter:'all',
-  assignments:{}, conditions:{}, timers:{}, completedTimes:[], doubleUp:{},
+  assignments:{}, conditions:{}, timers:{}, completedTimes:[], doubleUp:{}, doubleUpType:{},
   selRoom:null, loadingProp:false, rtog:{1:true,2:true,3:true}, toast:null,
   userFormOpen:false, userFormErr:'', userBusy:false,
 };
@@ -346,6 +349,7 @@ function scrRooms(){
         const hks=getHKs(S.prop);
         panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}</h3>
         <div class="du-check-row"><label><input type="checkbox" ${S.doubleUp[k]?'checked':''} onclick="ev_toggleDoubleUp('${k}')"> Zimmer muss aufgedoppelt werden</label></div>
+        ${S.doubleUp[k]?`<div class="du-type-row">${['Babybett','Schlafsofa'].map(t=>`<button class="du-type-btn${S.doubleUpType[k]===t?' act':''}" onclick="ev_setDoubleUpType('${k}','${t}')">${t}</button>`).join('')}</div>`:''}
         ${hks.length?hks.map(h=>`<div class="hk-row"><div class="hk-info">
           <div class="avatar" style="width:30px;height:30px;font-size:11px;background:${h.bg};color:${h.tx}">${h.id}</div>
           <div><div class="hk-name">${h.name}</div><div class="hk-load">${getWL(h.id,S.prop)} Zimmer</div></div></div>
@@ -355,7 +359,7 @@ function scrRooms(){
       } else if(S.role==='housekeeper'&&(c==='Dirty'||zr)){
         const has=!!S.timers[k];
         const el=has?Math.floor((Date.now()-S.timers[k].start)/1000):0;
-        panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${S.doubleUp[k]?' <span class="du-badge-inline">Aufdoppeln</span>':''}</h3>
+        panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${S.doubleUp[k]?` <span class="du-badge-inline">Aufdoppeln${S.doubleUpType[k]?' · '+S.doubleUpType[k]:''}</span>`:''}</h3>
         <div style="font-size:12px;color:#888;margin-bottom:6px;">${zr?'Zwangsreinigung fällig':'Reguläre Reinigung'}</div>
         ${has?`<div class="timer-box"><div class="timer-lbl">Reinigungszeit läuft</div><div class="timer-val" id="live-timer">${fmtDur(el)}</div></div>
         <button class="action-btn btn-done" onclick="ev_inspect('${k}')">Reinigung abschließen → Inspektion</button>`
@@ -383,7 +387,7 @@ function scrRooms(){
     const sub=running?'läuft…':zr?`ZR·${u.nights}n`:c==='Dirty'&&u.o?`Stay·${u.nights}n`:c==='CleanToBeInspected'?'Prüfen':(c==='OutOfService'||c==='OutOfOrder')?'Gesperrt':'';
     return`<div class="tile ${tc}${S.selRoom?.n===u.n?' sel':''}" onclick="ev_sel('${u.n}')">
       ${running?'<div class="timer-dot"></div>':''}
-      ${S.doubleUp[k]?'<div class="du-badge">2x</div>':''}
+      ${S.doubleUp[k]?`<div class="du-badge">${S.doubleUpType[k]==='Babybett'?'Baby':S.doubleUpType[k]==='Schlafsofa'?'Sofa':'2x'}</div>`:''}
       <div class="rnum">${u.n}</div><div class="sub">${sub}</div>
       ${au?`<div class="asgn" style="background:${au.bg};color:${au.tx}">${au.id}</div>`:''}
     </div>`;
@@ -569,7 +573,8 @@ function ev_filter(f){ S.filter=f;render(); }
 function ev_tog(id){ S.rtog[id]=!S.rtog[id];render(); }
 function ev_sel(n){ S.selRoom=S.selRoom?.n===n?null:{n,prop:S.prop}; stopTimerIv(); document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv(); }
 function ev_assign(k,uid){ S.assignments[k]===uid?delete S.assignments[k]:(S.assignments[k]=uid); document.getElementById('hkc').innerHTML=buildScreen(); }
-function ev_toggleDoubleUp(k){ S.doubleUp[k]?delete S.doubleUp[k]:(S.doubleUp[k]=true); document.getElementById('hkc').innerHTML=buildScreen(); }
+function ev_toggleDoubleUp(k){ S.doubleUp[k]?(delete S.doubleUp[k],delete S.doubleUpType[k]):(S.doubleUp[k]=true); document.getElementById('hkc').innerHTML=buildScreen(); }
+function ev_setDoubleUpType(k,t){ S.doubleUpType[k]=S.doubleUpType[k]===t?null:t; document.getElementById('hkc').innerHTML=buildScreen(); }
 function ev_startTimer(k){ S.timers[k]={start:Date.now(),uid:S.currentUser.id}; document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv(); }
 async function ev_inspect(k){
   if(S.timers[k]){ const dur=Math.floor((Date.now()-S.timers[k].start)/1000),pts=k.split('_');
