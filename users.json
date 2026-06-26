@@ -23,18 +23,6 @@
     "pass": "AW2026"
   },
   {
-    "id": "TE",
-    "name": "Tanja E.",
-    "role": "housekeeper",
-    "props": [
-      "EBO",
-      "ARNS"
-    ],
-    "bg": "#FAC775",
-    "tx": "#633806",
-    "pass": "TE2026"
-  },
-  {
     "id": "VM",
     "name": "Vera M.",
     "role": "housekeeper",
