@@ -495,6 +495,14 @@ function scrRooms(){
         } else if(c==='CleanToBeInspected'){
           actionBlock=`<div style="font-size:12px;color:#888;margin:6px 0;">Bereit zur Inspektion durch die Hausdame</div>
           <button class="action-btn btn-done" onclick="ev_completeInspection('${k}')">✓ Inspektion abschließen → Clean</button>`;
+        } else if(c==='Clean'&&hasDU(k)){
+          const hks=getHKs(S.prop);
+          actionBlock=`<div style="font-size:12px;color:#888;margin:6px 0;">Zimmer ist bereits gereinigt, muss aber aufgedoppelt werden</div>`+
+          (hks.length?hks.map(h=>`<div class="hk-row"><div class="hk-info">
+            <div class="avatar" style="width:30px;height:30px;font-size:11px;background:${h.bg};color:${h.tx}">${h.id}</div>
+            <div><div class="hk-name">${h.name}</div><div class="hk-load">${getWL(h.id,S.prop)} Zimmer</div></div></div>
+            <button class="asgn-btn${S.assignments[k]===h.id?' assigned':''}" onclick="ev_assign('${k}','${h.id}')">${S.assignments[k]===h.id?'✓ Zugeteilt':'Zuweisen'}</button>
+          </div>`).join(''):'<p style="font-size:12px;color:#888">Keine Zimmermädchen konfiguriert.</p>');
         }
         panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${u.dT?' 🧳':''}</h3>
         ${duBlock}
