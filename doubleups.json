@@ -2,5 +2,9 @@
   "TEST_101": {
     "types": [],
     "locked": true
+  },
+  "TEST_201": {
+    "types": [],
+    "locked": false
   }
 }
