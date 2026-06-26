@@ -36,12 +36,5 @@
     ],
     "locked": false,
     "need": false
-  },
-  "ARNS_12": {
-    "types": [
-      "Hund"
-    ],
-    "locked": false,
-    "need": false
   }
 }
