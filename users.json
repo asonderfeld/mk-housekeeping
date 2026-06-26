@@ -46,18 +46,6 @@
     "pass": "VM2026"
   },
   {
-    "id": "BN",
-    "name": "Beata N.",
-    "role": "housekeeper",
-    "props": [
-      "MUC_CTY",
-      "MUC_MWP"
-    ],
-    "bg": "#C0DD97",
-    "tx": "#27500A",
-    "pass": "BN2026"
-  },
-  {
     "id": "SR",
     "name": "Sandra R.",
     "role": "housekeeper",
