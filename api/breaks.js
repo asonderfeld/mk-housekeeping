@@ -47,11 +47,25 @@ async function getBreaksFile(owner) {
   return { sha: r.json.sha, breaks };
 }
 
-async function saveBreaksFile(owner, sha, breaks, message) {
-  const content = Buffer.from(JSON.stringify(breaks, null, 2)).toString('base64');
-  const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'PUT', { message, content, sha });
-  if (r.status !== 200 && r.status !== 201) throw new Error('breaks.json konnte nicht gespeichert werden: ' + (r.json.message || r.status));
-  return r.json;
+// Schreibt mit Retry: liest bei jedem Versuch die aktuelle Datei + SHA neu ein
+// und wendet die Mutation darauf an. Verhindert "sha does not match"-Fehler,
+// wenn zwei Speichervorgänge sich überlappen.
+async function saveWithRetry(owner, mutate, message, maxAttempts = 6) {
+  let lastMsg = '';
+  for (let i = 0; i < maxAttempts; i++) {
+    const { sha, breaks } = await getBreaksFile(owner);
+    const next = mutate(breaks);
+    const content = Buffer.from(JSON.stringify(next, null, 2)).toString('base64');
+    const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'PUT', { message, content, sha });
+    if (r.status === 200 || r.status === 201) return next;
+    lastMsg = (r.json && r.json.message) || String(r.status);
+    if (r.status === 409 || /does not match|sha/i.test(lastMsg)) {
+      await new Promise(res => setTimeout(res, 200 + i * 150));
+      continue;
+    }
+    throw new Error('breaks.json konnte nicht gespeichert werden: ' + lastMsg);
+  }
+  throw new Error('breaks.json: Konflikt nach mehreren Versuchen (gleichzeitige Änderung). ' + lastMsg);
 }
 
 module.exports = async (req, res) => {
@@ -78,10 +92,12 @@ module.exports = async (req, res) => {
       res.status(400).json({ error: 'entry (uid, start, end, duration) fehlt oder unvollständig.' }); return;
     }
 
-    const { sha, breaks } = await getBreaksFile(owner);
-    breaks.push({ uid: entry.uid, start: entry.start, end: entry.end, duration: entry.duration });
-    await saveBreaksFile(owner, sha, breaks, 'breaks.json: add ' + entry.uid + ' @ ' + entry.start);
-    res.status(200).json({ ok: true, breaks });
+    const next = await saveWithRetry(owner, breaks => {
+      const copy = breaks.slice();
+      copy.push({ uid: entry.uid, start: entry.start, end: entry.end, duration: entry.duration });
+      return copy;
+    }, 'breaks.json: add ' + entry.uid + ' @ ' + entry.start);
+    res.status(200).json({ ok: true, breaks: next });
   } catch (e) {
     console.error('[breaks]', e.message);
     res.status(500).json({ error: e.message });
