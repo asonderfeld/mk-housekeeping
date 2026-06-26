@@ -23,17 +23,6 @@
     "pass": "AW2026"
   },
   {
-    "id": "VM",
-    "name": "Vera M.",
-    "role": "housekeeper",
-    "props": [
-      "TIA"
-    ],
-    "bg": "#F5C4B3",
-    "tx": "#712B13",
-    "pass": "VM2026"
-  },
-  {
     "id": "EW",
     "name": "Eva W.",
     "role": "housekeeper",
