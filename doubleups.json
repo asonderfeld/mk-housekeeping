@@ -29,5 +29,12 @@
     ],
     "locked": false,
     "need": false
+  },
+  "BER_206": {
+    "types": [
+      "Babybett"
+    ],
+    "locked": false,
+    "need": false
   }
 }
