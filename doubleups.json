@@ -39,7 +39,8 @@
   },
   "BER_300": {
     "types": [
-      "Babybett"
+      "Babybett",
+      "Schlafsofa"
     ],
     "locked": false,
     "need": false
