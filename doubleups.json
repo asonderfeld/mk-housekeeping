@@ -36,12 +36,5 @@
     ],
     "locked": false,
     "need": false
-  },
-  "TEST_108": {
-    "types": [
-      "Babybett"
-    ],
-    "locked": false,
-    "need": false
   }
 }
