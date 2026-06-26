@@ -61,7 +61,7 @@ async function saveWithRetry(owner, mutate, message, maxAttempts = 6) {
     const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'PUT', { message, content, sha });
     if (r.status === 200 || r.status === 201) return next;
     lastMsg = (r.json && r.json.message) || String(r.status);
-    if (r.status === 409 || /does not match|sha/i.test(lastMsg)) {
+    if (r.status === 409 || r.status === 422 || /does not match|sha|expected|is at/i.test(lastMsg)) {
       await new Promise(res => setTimeout(res, 200 + i * 150));
       continue;
     }
