@@ -29,10 +29,5 @@
     ],
     "locked": false,
     "need": false
-  },
-  "BER_206": {
-    "types": [],
-    "locked": false,
-    "need": true
   }
 }
