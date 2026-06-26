@@ -44,5 +44,17 @@
     ],
     "bg": "#F5C4B3",
     "tx": "#712B13"
+  },
+  {
+    "id": "KLARA",
+    "name": "Klara Kettl",
+    "pass": "Klara",
+    "role": "housekeeper",
+    "props": [
+      "SPHMK",
+      "TEST"
+    ],
+    "bg": "#B5D4F4",
+    "tx": "#0C447C"
   }
 ]
