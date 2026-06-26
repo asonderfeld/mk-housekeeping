@@ -46,18 +46,6 @@
     "pass": "VM2026"
   },
   {
-    "id": "HM",
-    "name": "Hana M.",
-    "role": "housekeeper",
-    "props": [
-      "REM",
-      "RUE"
-    ],
-    "bg": "#E6F1FB",
-    "tx": "#185FA5",
-    "pass": "HM2026"
-  },
-  {
     "id": "EW",
     "name": "Eva W.",
     "role": "housekeeper",
