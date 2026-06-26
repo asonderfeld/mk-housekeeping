@@ -5,7 +5,8 @@
   },
   "TEST_201": {
     "types": [
-      "Babybett"
+      "Babybett",
+      "Schlafsofa"
     ],
     "locked": false
   }
