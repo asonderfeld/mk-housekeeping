@@ -349,7 +349,7 @@ function scrRooms(){
         const hks=getHKs(S.prop);
         panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}</h3>
         <div class="du-check-row"><label><input type="checkbox" ${S.doubleUp[k]?'checked':''} onclick="ev_toggleDoubleUp('${k}')"> Zimmer muss aufgedoppelt werden</label></div>
-        ${S.doubleUp[k]?`<div class="du-type-row">${['Babybett','Schlafsofa'].map(t=>`<button class="du-type-btn${S.doubleUpType[k]===t?' act':''}" onclick="ev_setDoubleUpType('${k}','${t}')">${t}</button>`).join('')}</div>`:''}
+        ${S.doubleUp[k]?`<div class="du-type-row">${['Babybett','Schlafsofa'].map(t=>`<button class="du-type-btn${(S.doubleUpType[k]||[]).includes(t)?' act':''}" onclick="ev_setDoubleUpType('${k}','${t}')">${t}</button>`).join('')}</div>`:''}
         ${hks.length?hks.map(h=>`<div class="hk-row"><div class="hk-info">
           <div class="avatar" style="width:30px;height:30px;font-size:11px;background:${h.bg};color:${h.tx}">${h.id}</div>
           <div><div class="hk-name">${h.name}</div><div class="hk-load">${getWL(h.id,S.prop)} Zimmer</div></div></div>
@@ -359,7 +359,7 @@ function scrRooms(){
       } else if(S.role==='housekeeper'&&(c==='Dirty'||zr)){
         const has=!!S.timers[k];
         const el=has?Math.floor((Date.now()-S.timers[k].start)/1000):0;
-        panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${S.doubleUp[k]?` <span class="du-badge-inline">Aufdoppeln${S.doubleUpType[k]?' · '+S.doubleUpType[k]:''}</span>`:''}</h3>
+        panel=`<div class="panel"><h3>Zimmer ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${S.doubleUp[k]?` <span class="du-badge-inline">Aufdoppeln${(S.doubleUpType[k]||[]).length?' · '+S.doubleUpType[k].join(' + '):''}</span>`:''}</h3>
         <div style="font-size:12px;color:#888;margin-bottom:6px;">${zr?'Zwangsreinigung fällig':'Reguläre Reinigung'}</div>
         ${has?`<div class="timer-box"><div class="timer-lbl">Reinigungszeit läuft</div><div class="timer-val" id="live-timer">${fmtDur(el)}</div></div>
         <button class="action-btn btn-done" onclick="ev_inspect('${k}')">Reinigung abschließen → Inspektion</button>`
@@ -387,7 +387,7 @@ function scrRooms(){
     const sub=running?'läuft…':zr?`ZR·${u.nights}n`:c==='Dirty'&&u.o?`Stay·${u.nights}n`:c==='CleanToBeInspected'?'Prüfen':(c==='OutOfService'||c==='OutOfOrder')?'Gesperrt':'';
     return`<div class="tile ${tc}${S.selRoom?.n===u.n?' sel':''}" onclick="ev_sel('${u.n}')">
       ${running?'<div class="timer-dot"></div>':''}
-      ${S.doubleUp[k]?`<div class="du-badge">${S.doubleUpType[k]==='Babybett'?'Baby':S.doubleUpType[k]==='Schlafsofa'?'Sofa':'2x'}</div>`:''}
+      ${S.doubleUp[k]?`<div class="du-badge">2x${(S.doubleUpType[k]||[]).length?' '+S.doubleUpType[k].map(t=>t==='Babybett'?'Baby':'Sofa').join('+'):''}</div>`:''}
       <div class="rnum">${u.n}</div><div class="sub">${sub}</div>
       ${au?`<div class="asgn" style="background:${au.bg};color:${au.tx}">${au.id}</div>`:''}
     </div>`;
@@ -574,7 +574,7 @@ function ev_tog(id){ S.rtog[id]=!S.rtog[id];render(); }
 function ev_sel(n){ S.selRoom=S.selRoom?.n===n?null:{n,prop:S.prop}; stopTimerIv(); document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv(); }
 function ev_assign(k,uid){ S.assignments[k]===uid?delete S.assignments[k]:(S.assignments[k]=uid); document.getElementById('hkc').innerHTML=buildScreen(); }
 function ev_toggleDoubleUp(k){ S.doubleUp[k]?(delete S.doubleUp[k],delete S.doubleUpType[k]):(S.doubleUp[k]=true); document.getElementById('hkc').innerHTML=buildScreen(); }
-function ev_setDoubleUpType(k,t){ S.doubleUpType[k]=S.doubleUpType[k]===t?null:t; document.getElementById('hkc').innerHTML=buildScreen(); }
+function ev_setDoubleUpType(k,t){ const a=S.doubleUpType[k]||(S.doubleUpType[k]=[]); const i=a.indexOf(t); i>-1?a.splice(i,1):a.push(t); document.getElementById('hkc').innerHTML=buildScreen(); }
 function ev_startTimer(k){ S.timers[k]={start:Date.now(),uid:S.currentUser.id}; document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv(); }
 async function ev_inspect(k){
   if(S.timers[k]){ const dur=Math.floor((Date.now()-S.timers[k].start)/1000),pts=k.split('_');
