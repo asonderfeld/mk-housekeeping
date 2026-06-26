@@ -21,5 +21,13 @@
     "types": [],
     "locked": false,
     "need": true
+  },
+  "EBO_104": {
+    "types": [
+      "Schlafsofa",
+      "Babybett"
+    ],
+    "locked": false,
+    "need": false
   }
 }
