@@ -36,5 +36,12 @@
     ],
     "locked": false,
     "need": false
+  },
+  "BER_300": {
+    "types": [
+      "Babybett"
+    ],
+    "locked": false,
+    "need": false
   }
 }
