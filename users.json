@@ -11,18 +11,6 @@
     "pass": "AS"
   },
   {
-    "id": "EW",
-    "name": "Eva W.",
-    "role": "housekeeper",
-    "props": [
-      "ZPF",
-      "LON"
-    ],
-    "bg": "#EEEDFE",
-    "tx": "#3C3489",
-    "pass": "EW2026"
-  },
-  {
     "id": "JOHANNA",
     "name": "Johanna Lindner",
     "pass": "Hotel2016",
