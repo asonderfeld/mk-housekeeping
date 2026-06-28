@@ -38,5 +38,10 @@
     ],
     "locked": false,
     "need": false
+  },
+  "TEST_102": {
+    "types": [],
+    "locked": false,
+    "need": true
   }
 }
