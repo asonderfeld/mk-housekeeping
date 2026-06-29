@@ -1,71 +1,35 @@
 // MK Housekeeping — Benutzerverwaltung (Vercel Serverless Function)
-// Liest/schreibt users.json direkt im GitHub-Repo, damit neu angelegte
-// Benutzer dauerhaft gespeichert werden (Git-Commit löst Vercel-Redeploy aus).
-const https = require('https');
+// Speichert Benutzer als Redis-Hash (hk:users, Feld = User-Id) statt als Datei
+// im GitHub-Repo. HSET/HDEL sind atomare Redis-Operationen, dadurch kein
+// Read-Modify-Write-Konflikt mehr wie bei der vorherigen Git-Lösung.
+const { redis, parseVal } = require('./_redis');
 
-const GH_HOST   = 'api.github.com';
-const GH_TOKEN  = process.env.GH_TOKEN;
-const REPO      = 'mk-housekeeping';
-const FILE_PATH = 'users.json';
+const KEY = 'hk:users';
 
-function ghReq(path, method, body) {
-  return new Promise((resolve, reject) => {
-    const bodyStr = body ? JSON.stringify(body) : '';
-    const req = https.request({
-      hostname: GH_HOST, path, method,
-      headers: Object.assign({
-        'Authorization': 'token ' + GH_TOKEN,
-        'User-Agent': 'mk-housekeeping-app',
-        'Accept': 'application/vnd.github+json',
-      }, bodyStr ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyStr) } : {}),
-    }, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
-        let json; try { json = data ? JSON.parse(data) : {}; } catch (e) { json = { raw: data }; }
-        resolve({ status: res.statusCode, json });
-      });
-    });
-    req.on('error', reject);
-    if (bodyStr) req.write(bodyStr);
-    req.end();
-  });
-}
+// Einmalige Startbefüllung, falls die Redis-DB noch leer ist (Migration von
+// der alten users.json — diese 10 Einträge waren der bisherige Datenstand).
+const SEED_USERS = [
+  { id: 'AS', name: 'Arno Sonderfeld', role: 'admin', props: ['alle'], bg: '#B5D4F4', tx: '#0C447C', pass: 'AS' },
+  { id: 'LD', name: 'Lena Dressler', role: 'admin', props: ['STGR', 'SPHMK'], bg: '#B5D4F4', tx: '#0C447C', pass: 'LD2026' },
+  { id: 'MK', name: 'Maria K.', role: 'housekeeper', props: ['STGR'], bg: '#EEEDFE', tx: '#534AB7', pass: 'MK2026' },
+  { id: 'AW', name: 'Anna W.', role: 'housekeeper', props: ['STGR', 'SPHMK'], bg: '#9FE1CB', tx: '#085041', pass: 'AW2026' },
+  { id: 'TE', name: 'Tanja E.', role: 'housekeeper', props: ['EBO', 'ARNS'], bg: '#FAC775', tx: '#633806', pass: 'TE2026' },
+  { id: 'VM', name: 'Vera M.', role: 'housekeeper', props: ['TIA'], bg: '#F5C4B3', tx: '#712B13', pass: 'VM2026' },
+  { id: 'BN', name: 'Beata N.', role: 'housekeeper', props: ['MUC_CTY', 'MUC_MWP'], bg: '#C0DD97', tx: '#27500A', pass: 'BN2026' },
+  { id: 'SR', name: 'Sandra R.', role: 'housekeeper', props: ['BER', 'FRA'], bg: '#FBEAF0', tx: '#993556', pass: 'SR2026' },
+  { id: 'HM', name: 'Hana M.', role: 'housekeeper', props: ['REM', 'RUE'], bg: '#E6F1FB', tx: '#185FA5', pass: 'HM2026' },
+  { id: 'EW', name: 'Eva W.', role: 'housekeeper', props: ['ZPF', 'LON'], bg: '#EEEDFE', tx: '#3C3489', pass: 'EW2026' },
+];
 
-async function getOwner() {
-  const r = await ghReq('/user', 'GET');
-  if (r.status !== 200) throw new Error('GitHub-Login fehlgeschlagen: ' + (r.json.message || r.status));
-  return r.json.login;
-}
-
-async function getUsersFile(owner) {
-  const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'GET');
-  if (r.status !== 200) throw new Error('users.json konnte nicht gelesen werden: ' + (r.json.message || r.status));
-  const content = Buffer.from(r.json.content, 'base64').toString('utf8');
-  return { sha: r.json.sha, users: JSON.parse(content) };
-}
-
-// Schreibt mit Retry: liest bei jedem Versuch die aktuelle Datei + SHA neu ein
-// und wendet die Mutation darauf an. Verhindert "sha does not match"-Fehler,
-// wenn zwei Speichervorgänge sich überlappen. mutate(users) gibt entweder das
-// neue Array zurück, oder {error:"..."} um den Vorgang ohne Schreiben abzubrechen.
-async function saveWithRetry(owner, mutate, message, maxAttempts = 6) {
-  let lastMsg = '';
-  for (let i = 0; i < maxAttempts; i++) {
-    const { sha, users } = await getUsersFile(owner);
-    const result = mutate(users);
-    if (result && result.error) return result;
-    const content = Buffer.from(JSON.stringify(result, null, 2)).toString('base64');
-    const r = await ghReq(`/repos/${owner}/${REPO}/contents/${FILE_PATH}`, 'PUT', { message, content, sha });
-    if (r.status === 200 || r.status === 201) return result;
-    lastMsg = (r.json && r.json.message) || String(r.status);
-    if (r.status === 409 || r.status === 422 || /does not match|sha|expected|is at/i.test(lastMsg)) {
-      await new Promise(res => setTimeout(res, 200 + i * 150));
-      continue;
-    }
-    throw new Error('users.json konnte nicht gespeichert werden: ' + lastMsg);
+async function getAllUsers(r) {
+  const map = await r.hgetall(KEY);
+  if (!map || Object.keys(map).length === 0) {
+    const pipe = r.pipeline();
+    SEED_USERS.forEach(u => pipe.hset(KEY, { [u.id]: JSON.stringify(u) }));
+    await pipe.exec();
+    return SEED_USERS.slice();
   }
-  throw new Error('users.json: Konflikt nach mehreren Versuchen (gleichzeitige Änderung). ' + lastMsg);
+  return Object.values(map).map(parseVal);
 }
 
 module.exports = async (req, res) => {
@@ -75,11 +39,10 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
 
   try {
-    if (!GH_TOKEN) { res.status(500).json({ error: 'GH_TOKEN fehlt in den Vercel Environment Variables.' }); return; }
-    const owner = await getOwner();
+    const r = redis();
 
     if (req.method === 'GET') {
-      const { users } = await getUsersFile(owner);
+      const users = await getAllUsers(r);
       res.status(200).json({ ok: true, users });
       return;
     }
@@ -92,39 +55,34 @@ module.exports = async (req, res) => {
       if (!user || !user.id || !user.pass || !user.name || !user.role) {
         res.status(400).json({ error: 'Benutzername, Name, Passwort und Rolle sind erforderlich.' }); return;
       }
-      const result = await saveWithRetry(owner, users => {
-        if (users.some(u => u.id.toLowerCase() === String(user.id).toLowerCase())) {
-          return { error: 'Dieser Benutzername existiert bereits.' };
-        }
-        return users.concat([user]);
-      }, 'users.json: add ' + user.id);
-      if (result && result.error) { res.status(409).json({ error: result.error }); return; }
-      res.status(200).json({ ok: true, users: result });
+      const all = await getAllUsers(r);
+      if (all.some(u => u.id.toLowerCase() === String(user.id).toLowerCase())) {
+        res.status(409).json({ error: 'Dieser Benutzername existiert bereits.' }); return;
+      }
+      await r.hset(KEY, { [user.id]: JSON.stringify(user) });
+      const users = await getAllUsers(r);
+      res.status(200).json({ ok: true, users });
       return;
     }
 
     if (action === 'delete') {
       if (!id) { res.status(400).json({ error: '"id" fehlt' }); return; }
-      const result = await saveWithRetry(owner, users => {
-        const next = users.filter(u => u.id !== id);
-        if (next.length === users.length) return { error: 'User nicht gefunden' };
-        return next;
-      }, 'users.json: remove ' + id);
-      if (result && result.error) { res.status(404).json({ error: result.error }); return; }
-      res.status(200).json({ ok: true, users: result });
+      const existing = await r.hget(KEY, id);
+      if (existing === null || existing === undefined) { res.status(404).json({ error: 'User nicht gefunden' }); return; }
+      await r.hdel(KEY, id);
+      const users = await getAllUsers(r);
+      res.status(200).json({ ok: true, users });
       return;
     }
 
     if (action === 'update') {
       if (!user || !user.id) { res.status(400).json({ error: 'user.id fehlt' }); return; }
-      const result = await saveWithRetry(owner, users => {
-        let found = false;
-        const next = users.map(u => { if (u.id === user.id) { found = true; return Object.assign({}, u, user); } return u; });
-        if (!found) return { error: 'User nicht gefunden' };
-        return next;
-      }, 'users.json: update ' + user.id);
-      if (result && result.error) { res.status(404).json({ error: result.error }); return; }
-      res.status(200).json({ ok: true, users: result });
+      const existing = await r.hget(KEY, user.id);
+      if (existing === null || existing === undefined) { res.status(404).json({ error: 'User nicht gefunden' }); return; }
+      const merged = Object.assign({}, parseVal(existing), user);
+      await r.hset(KEY, { [user.id]: JSON.stringify(merged) });
+      const users = await getAllUsers(r);
+      res.status(200).json({ ok: true, users });
       return;
     }
 
