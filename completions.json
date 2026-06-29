@@ -19,5 +19,12 @@
     "room": "201",
     "duration": 28,
     "ts": 1782458628072
+  },
+  {
+    "uid": "JOHANNA",
+    "prop": "TEST",
+    "room": "105",
+    "duration": 3,
+    "ts": 1782710781793
   }
 ]
