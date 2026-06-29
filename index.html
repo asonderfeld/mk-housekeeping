@@ -196,22 +196,22 @@ function pickColor(seed){ let h=0; for(const c of String(seed)) h=(h*31+c.charCo
 
 async function loadUsers(){
   try{
-    const r = await fetch('/users.json',{cache:'no-store'});
-    if(r.ok){ const d = await r.json(); if(Array.isArray(d)&&d.length) USERS = d; }
-  }catch(e){ console.warn('[loadUsers] konnte users.json nicht laden, nutze Fallback', e.message); }
+    const r = await fetch('/api/users',{cache:'no-store'});
+    if(r.ok){ const j = await r.json(); if(Array.isArray(j.users)&&j.users.length) USERS = j.users; }
+  }catch(e){ console.warn('[loadUsers] konnte Benutzer nicht laden, nutze Fallback', e.message); }
 }
 
 async function loadCompletions(){
   try{
-    const r = await fetch('/completions.json',{cache:'no-store'});
-    if(r.ok){ const d = await r.json(); if(Array.isArray(d)) S.completedTimes=d; }
-  }catch(e){ console.warn('[loadCompletions] konnte completions.json nicht laden', e.message); }
+    const r = await fetch('/api/completions',{cache:'no-store'});
+    if(r.ok){ const j = await r.json(); if(Array.isArray(j.completions)) S.completedTimes=j.completions; }
+  }catch(e){ console.warn('[loadCompletions] konnte Statistik nicht laden', e.message); }
 }
 
 async function loadDoubleUps(){
   try{
-    const r = await fetch('/doubleups.json',{cache:'no-store'});
-    if(r.ok){ const d = await r.json();
+    const r = await fetch('/api/doubleups',{cache:'no-store'});
+    if(r.ok){ const j = await r.json(); const d=j.doubleUps;
       if(d&&typeof d==='object'&&!Array.isArray(d)){
         S.doubleUp={};S.doubleUpType={};S.doubleUpLocked={};
         Object.entries(d).forEach(([k,v])=>{
@@ -222,14 +222,14 @@ async function loadDoubleUps(){
         });
       }
     }
-  }catch(e){ console.warn('[loadDoubleUps] konnte doubleups.json nicht laden', e.message); }
+  }catch(e){ console.warn('[loadDoubleUps] konnte Aufdoppeln-Status nicht laden', e.message); }
 }
 
 async function loadBreaks(){
   try{
-    const r = await fetch('/breaks.json',{cache:'no-store'});
-    if(r.ok){ const d = await r.json(); if(Array.isArray(d)) S.breakLog=d; }
-  }catch(e){ console.warn('[loadBreaks] konnte breaks.json nicht laden', e.message); }
+    const r = await fetch('/api/breaks',{cache:'no-store'});
+    if(r.ok){ const j = await r.json(); if(Array.isArray(j.breaks)) S.breakLog=j.breaks; }
+  }catch(e){ console.warn('[loadBreaks] konnte Pausen nicht laden', e.message); }
 }
 
 const LOGIN_KEY = 'mkhk_session';
