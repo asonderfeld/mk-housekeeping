@@ -759,14 +759,15 @@ function scrRooms(){
         ${duBlock}
         ${actionBlock}
         </div>`;
-      } else if(S.role==='housekeeper'&&(c==='Dirty'||zr)){
+      } else if(S.role==='housekeeper'&&(c==='Dirty'||zr||(c==='Clean'&&hasDU(k)))){
+        const isDU=c==='Clean'&&hasDU(k);
         const has=!!S.timers[k];
         const el=has?Math.floor((Date.now()-S.timers[k].start)/1000):0;
         panel=`<div class="panel"><h3>${t('room_word')} ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${hasDU(k)?` <span class="du-badge-inline">${S.doubleUp[k]?t('tab_doubleups'):t('du_equipment_label')}${(S.doubleUpType[k]||[]).length?' · '+S.doubleUpType[k].map(duTypeLabel).join(' + '):''}</span>`:''}</h3>
-        <div style="font-size:12px;color:#888;margin-bottom:6px;">${zr?t('zr_due'):t('regular_clean')}</div>
+        <div style="font-size:12px;color:#888;margin-bottom:6px;">${isDU?t('clean_but_needs_doubleup'):zr?t('zr_due'):t('regular_clean')}</div>
         ${has?`<div class="timer-box"><div class="timer-lbl">${t('cleaning_running')}</div><div class="timer-val" id="live-timer">${fmtDur(el)}</div></div>
         ${u.cm?`<div class="res-comment-box"><div class="res-comment-lbl">${t('reservation_comment')}</div><div class="res-comment-txt">${u.cm}</div></div>`:''}
-        <button class="action-btn btn-done" onclick="ev_inspect('${k}')">${t('complete_cleaning_btn')}</button>`
+        <button class="action-btn btn-done" onclick="${isDU?`ev_completeDoubleUp('${k}')`:`ev_inspect('${k}')`}">${t('complete_cleaning_btn')}</button>`
         :`<button class="action-btn btn-start" onclick="ev_startTimer('${k}')">${t('start_cleaning_btn')}</button>`}
         </div>`;
       }
@@ -1108,6 +1109,21 @@ async function ev_inspect(k){
     const r=await pushCondition(u.id,'CleanToBeInspected');
     if(!r.ok) showToast(t('err_condition_not_synced',{msg:r.msg||t('unknown_error')}),'err');
   }
+  if(entry){
+    const r=await pushCompletion(entry);
+    if(!r.ok) showToast(t('err_completion_not_saved',{msg:r.msg||t('unknown_error')}),'err');
+  }
+}
+
+async function ev_completeDoubleUp(k){
+  let entry=null;
+  if(S.timers[k]){ const dur=Math.floor((Date.now()-S.timers[k].start)/1000),pts=k.split('_');
+    entry={uid:S.timers[k].uid,prop:pts[0],room:pts.slice(1).join('_'),duration:dur,ts:Date.now()};
+    S.completedTimes.push(entry); delete S.timers[k]; }
+  S.selRoom=null;
+  S.doubleUp[k]=false; S.doubleUpType[k]=[]; S.doubleUpLocked[k]=false;
+  persistDoubleUp(k);
+  render();
   if(entry){
     const r=await pushCompletion(entry);
     if(!r.ok) showToast(t('err_completion_not_saved',{msg:r.msg||t('unknown_error')}),'err');
