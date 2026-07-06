@@ -1121,8 +1121,6 @@ async function ev_completeDoubleUp(k){
     entry={uid:S.timers[k].uid,prop:pts[0],room:pts.slice(1).join('_'),duration:dur,ts:Date.now()};
     S.completedTimes.push(entry); delete S.timers[k]; }
   S.selRoom=null;
-  S.doubleUp[k]=false; S.doubleUpType[k]=[]; S.doubleUpLocked[k]=false;
-  persistDoubleUp(k);
   render();
   if(entry){
     const r=await pushCompletion(entry);
