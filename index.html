@@ -252,6 +252,7 @@ const I18N = {
     err_condition_not_synced:'Achtung: Status wurde NICHT an Apaleo übertragen — {msg}',
     err_completion_not_saved:'Achtung: Reinigungszeit wurde NICHT dauerhaft gespeichert — {msg}',
     err_break_not_saved:'Achtung: Pause wurde NICHT dauerhaft gespeichert — {msg}',
+    err_assignment_not_saved:'Achtung: Zuweisung wurde NICHT dauerhaft gespeichert — {msg}',
     unknown_error:'Unbekannter Fehler', retry_btn:'Erneut versuchen',
   },
   en:{
@@ -305,6 +306,7 @@ const I18N = {
     err_condition_not_synced:'Warning: status was NOT synced to Apaleo — {msg}',
     err_completion_not_saved:'Warning: cleaning time was NOT permanently saved — {msg}',
     err_break_not_saved:'Warning: break was NOT permanently saved — {msg}',
+    err_assignment_not_saved:'Warning: assignment was NOT permanently saved — {msg}',
     unknown_error:'Unknown error', retry_btn:'Try again',
   },
   sq:{
@@ -358,6 +360,7 @@ const I18N = {
     err_condition_not_synced:'Kujdes: statusi NUK u sinkronizua me Apaleo — {msg}',
     err_completion_not_saved:'Kujdes: koha e pastrimit NUK u ruajt përgjithmonë — {msg}',
     err_break_not_saved:'Kujdes: pushimi NUK u ruajt përgjithmonë — {msg}',
+    err_assignment_not_saved:'Kujdes: caktimi NUK u ruajt përgjithmonë — {msg}',
     unknown_error:'Gabim i panjohur', retry_btn:'Provo përsëri',
   },
   uk:{
@@ -411,6 +414,7 @@ const I18N = {
     err_condition_not_synced:'Увага: статус НЕ синхронізовано з Apaleo — {msg}',
     err_completion_not_saved:'Увага: час прибирання НЕ збережено остаточно — {msg}',
     err_break_not_saved:'Увага: перерву НЕ збережено остаточно — {msg}',
+    err_assignment_not_saved:'Увага: призначення НЕ збережено остаточно — {msg}',
     unknown_error:'Невідома помилка', retry_btn:'Спробувати ще раз',
   },
 };
@@ -473,6 +477,15 @@ async function loadDoubleUps(){
   }catch(e){ console.warn('[loadDoubleUps] konnte Aufdoppeln-Status nicht laden', e.message); }
 }
 
+async function loadAssignments(){
+  try{
+    const r = await fetch('/api/assignments',{cache:'no-store'});
+    if(r.ok){ const j = await r.json(); const a=j.assignments;
+      if(a&&typeof a==='object'&&!Array.isArray(a)) S.assignments=a;
+    }
+  }catch(e){ console.warn('[loadAssignments] konnte Zuweisungen nicht laden', e.message); }
+}
+
 async function loadBreaks(){
   try{
     const r = await fetch('/api/breaks',{cache:'no-store'});
@@ -516,6 +529,20 @@ async function pushCompletion(entry) {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ action:'add', entry }),
+    });
+    const text = await res.text();
+    let json; try { json = text ? JSON.parse(text) : {}; } catch(e) { json = {}; }
+    if (!res.ok) return { ok:false, msg: json.error || ('HTTP ' + res.status) };
+    return { ok:true };
+  }catch(e){ return { ok:false, msg: e.message }; }
+}
+
+async function pushAssignment(action, key, uid) {
+  try{
+    const res = await fetch('/api/assignments', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ action, key, uid }),
     });
     const text = await res.text();
     let json; try { json = text ? JSON.parse(text) : {}; } catch(e) { json = {}; }
@@ -1047,7 +1074,16 @@ function ev_statsPeriod(p){ S.statsPeriod=p; document.getElementById('hkc').inne
 function ev_statsPerson(uid){ S.statsPerson=S.statsPerson===uid?null:uid; document.getElementById('hkc').innerHTML=buildScreen(); }
 function ev_tog(id){ S.rtog[id]=!S.rtog[id];render(); }
 function ev_sel(n){ S.selRoom=S.selRoom?.n===n?null:{n,prop:S.prop}; stopTimerIv(); document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv(); }
-function ev_assign(k,uid){ S.assignments[k]===uid?delete S.assignments[k]:(S.assignments[k]=uid); document.getElementById('hkc').innerHTML=buildScreen(); }
+function ev_assign(k,uid){
+  if(S.assignments[k]===uid){
+    delete S.assignments[k];
+    pushAssignment('clear',k).then(r=>{ if(!r.ok) showToast(t('err_assignment_not_saved',{msg:r.msg||t('unknown_error')}),'err'); });
+  } else {
+    S.assignments[k]=uid;
+    pushAssignment('set',k,uid).then(r=>{ if(!r.ok) showToast(t('err_assignment_not_saved',{msg:r.msg||t('unknown_error')}),'err'); });
+  }
+  document.getElementById('hkc').innerHTML=buildScreen();
+}
 
 function persistDoubleUp(k){
   const need=!!S.doubleUp[k], types=S.doubleUpType[k]||[], locked=!!S.doubleUpLocked[k];
@@ -1140,7 +1176,7 @@ async function ev_completeInspection(k){
 }
 
 async function init(){
-  await Promise.all([loadUsers(), loadCompletions(), loadDoubleUps(), loadBreaks()]);
+  await Promise.all([loadUsers(), loadCompletions(), loadDoubleUps(), loadBreaks(), loadAssignments()]);
   if(!S.loggedIn){
     try{
       const savedId=localStorage.getItem(LOGIN_KEY);
