@@ -168,6 +168,9 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 
 <script>
 const API = '/api/apaleo';
+// Versions-ID: ab jetzt bei jeder inhaltlichen Änderung hochzählen (SemVer-artig:
+// MAJOR.MINOR.PATCH). Sichtbar im Header und auf dem Login-Screen für Support/Debugging.
+const APP_VERSION = '6.2.0';
 
 const PROPERTY_NAMES = {
   ARNS:'Gästehäuser Arnstorf', BER:'Berlin', EBO:'Eschborn', FRA:'Frankfurt',
@@ -216,6 +219,8 @@ const I18N = {
     multi_select_enter:'Mehrfachauswahl', multi_select_exit:'Fertig',
     multi_selected_count:'{n} Zimmer ausgewählt', multi_select_hint:'Tippe Zimmer an, um sie auszuwählen.',
     multi_assign_done:'{n} Zimmer zugewiesen.',
+    clear_all_assignments_btn:'Alle Zuweisungen aufheben', confirm_clear_assignments:'Wirklich alle {n} Zuweisungen in diesem Haus aufheben?',
+    clear_assignments_done:'{n} Zuweisungen aufgehoben.', no_assignments_to_clear:'Keine Zuweisungen in diesem Haus vorhanden.',
     zr_due:'Zwangsreinigung fällig', regular_clean:'Reguläre Reinigung', cleaning_running:'Reinigungszeit läuft',
     reservation_comment:'📋 Reservierungskommentar', complete_cleaning_btn:'Reinigung abschließen → Inspektion', start_cleaning_btn:'▶ Reinigung starten',
     scope_mine:'Nur meine Zimmer', scope_all:'Alle Zimmer',
@@ -233,7 +238,7 @@ const I18N = {
     no_doubleup_rooms:'Aktuell ist kein Zimmer als „aufgedoppelt" oder mit Sonderausstattung markiert.',
     doubled_rooms_title:'Aufgedoppelte Zimmer ({n})', no_type_chosen:'kein Typ gewählt',
     rules_title:'Automatisierungsregeln',
-    rule1_name:'Zwangsreinigung — 2-Nächte-Trigger', rule1_desc:'Stayover ≥2 Nächte, geradzahlig, kein Abreisetag → ZR (rot)',
+    rule1_name:'Zwangsreinigung — 2-Nächte-Trigger', rule1_desc:'Stayover ≥2 Nächte, geradzahlig, Abreise weder heute noch morgen → ZR (rot)',
     rule2_name:'Tagesreinigung nach Check-out', rule2_desc:'Zimmer mit Abreise heute → automatisch Dirty nach Check-out',
     rule3_name:'Inspektions-Erinnerung', rule3_desc:'CleanToBeInspected länger als 2h → Push an Hausdame',
     rule_active:'Aktiv',
@@ -273,6 +278,8 @@ const I18N = {
     multi_select_enter:'Select multiple', multi_select_exit:'Done',
     multi_selected_count:'{n} rooms selected', multi_select_hint:'Tap rooms to select them.',
     multi_assign_done:'{n} rooms assigned.',
+    clear_all_assignments_btn:'Clear all assignments', confirm_clear_assignments:'Really clear all {n} assignments in this property?',
+    clear_assignments_done:'{n} assignments cleared.', no_assignments_to_clear:'No assignments in this property.',
     zr_due:'Forced cleaning due', regular_clean:'Regular cleaning', cleaning_running:'Cleaning time running',
     reservation_comment:'📋 Reservation note', complete_cleaning_btn:'Complete cleaning → Inspection', start_cleaning_btn:'▶ Start cleaning',
     scope_mine:'Only my rooms', scope_all:'All rooms',
@@ -290,7 +297,7 @@ const I18N = {
     no_doubleup_rooms:'Currently no room is marked as needing extra setup.',
     doubled_rooms_title:'Rooms with extra setup ({n})', no_type_chosen:'no type chosen',
     rules_title:'Automation rules',
-    rule1_name:'Forced cleaning — 2-night trigger', rule1_desc:'Stayover ≥2 nights, even number, not a departure day → forced cleaning (red)',
+    rule1_name:'Forced cleaning — 2-night trigger', rule1_desc:'Stayover ≥2 nights, even number, no departure today or tomorrow → forced cleaning (red)',
     rule2_name:'Same-day cleaning after check-out', rule2_desc:'Room with departure today → automatically Dirty after check-out',
     rule3_name:'Inspection reminder', rule3_desc:'Awaiting inspection for more than 2h → notify supervisor',
     rule_active:'Active',
@@ -330,6 +337,8 @@ const I18N = {
     multi_select_enter:'Zgjidh disa', multi_select_exit:'Gati',
     multi_selected_count:'{n} dhoma të zgjedhura', multi_select_hint:'Prekni dhomat për t\'i zgjedhur.',
     multi_assign_done:'{n} dhoma u caktuan.',
+    clear_all_assignments_btn:'Hiq të gjitha caktimet', confirm_clear_assignments:'Të hiqen vërtet të gjitha {n} caktimet në këtë hotel?',
+    clear_assignments_done:'{n} caktime u hoqën.', no_assignments_to_clear:'Asnjë caktim në këtë hotel.',
     zr_due:'Pastrim i detyrueshëm i nevojshëm', regular_clean:'Pastrim i rregullt', cleaning_running:'Koha e pastrimit po vazhdon',
     reservation_comment:'📋 Shënim rezervimi', complete_cleaning_btn:'Përfundo pastrimin → Inspektim', start_cleaning_btn:'▶ Fillo pastrimin',
     scope_mine:'Vetëm dhomat e mia', scope_all:'Të gjitha dhomat',
@@ -347,7 +356,7 @@ const I18N = {
     no_doubleup_rooms:'Aktualisht asnjë dhomë nuk është shënuar për pajisje shtesë.',
     doubled_rooms_title:'Dhoma me pajisje shtesë ({n})', no_type_chosen:'asnjë lloj i zgjedhur',
     rules_title:'Rregullat e automatizimit',
-    rule1_name:'Pastrim i detyrueshëm — aktivizim 2-net', rule1_desc:'Qëndrim ≥2 net, numër çift, jo ditë nisje → pastrim i detyrueshëm (kuq)',
+    rule1_name:'Pastrim i detyrueshëm — aktivizim 2-net', rule1_desc:'Qëndrim ≥2 net, numër çift, jo nisje sot apo nesër → pastrim i detyrueshëm (kuq)',
     rule2_name:'Pastrim ditor pas check-out', rule2_desc:'Dhoma me nisje sot → automatikisht e papastër pas check-out',
     rule3_name:'Kujtues inspektimi', rule3_desc:'Në pritje inspektimi për më shumë se 2 orë → njoftim te përgjegjësja',
     rule_active:'Aktive',
@@ -387,6 +396,8 @@ const I18N = {
     multi_select_enter:'Вибрати кілька', multi_select_exit:'Готово',
     multi_selected_count:'Вибрано кімнат: {n}', multi_select_hint:'Торкніться кімнат, щоб вибрати їх.',
     multi_assign_done:'Призначено кімнат: {n}.',
+    clear_all_assignments_btn:'Скасувати всі призначення', confirm_clear_assignments:'Дійсно скасувати всі {n} призначення в цьому готелі?',
+    clear_assignments_done:'Скасовано призначень: {n}.', no_assignments_to_clear:'У цьому готелі немає призначень.',
     zr_due:'Потрібне примусове прибирання', regular_clean:'Звичайне прибирання', cleaning_running:'Час прибирання триває',
     reservation_comment:'📋 Примітка до резервації', complete_cleaning_btn:'Завершити прибирання → Перевірка', start_cleaning_btn:'▶ Почати прибирання',
     scope_mine:'Лише мої кімнати', scope_all:'Усі кімнати',
@@ -404,7 +415,7 @@ const I18N = {
     no_doubleup_rooms:'Наразі немає кімнат, позначених для додаткової підготовки.',
     doubled_rooms_title:'Кімнати з додатковою підготовкою ({n})', no_type_chosen:'тип не вибрано',
     rules_title:'Правила автоматизації',
-    rule1_name:'Примусове прибирання — тригер на 2 ночі', rule1_desc:'Проживання ≥2 ночі, парна кількість, не день виїзду → примусове прибирання (червоний)',
+    rule1_name:'Примусове прибирання — тригер на 2 ночі', rule1_desc:'Проживання ≥2 ночі, парна кількість, виїзд не сьогодні і не завтра → примусове прибирання (червоний)',
     rule2_name:'Денне прибирання після виїзду', rule2_desc:'Кімната з виїздом сьогодні → автоматично «брудна» після виїзду',
     rule3_name:'Нагадування про перевірку', rule3_desc:'Очікує перевірки понад 2 год → сповіщення керівнику',
     rule_active:'Активно',
@@ -626,10 +637,15 @@ async function fetchProperties(allowedIds) {
 async function fetchPropertyData(propId) {
   const today = new Date(); today.setHours(0,0,0,0);
   const pad2 = n => String(n).padStart(2,'0');
-  const todayStr = today.getFullYear()+'-'+pad2(today.getMonth()+1)+'-'+pad2(today.getDate());
+  const ymd = d => d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+  const todayStr = ymd(today);
   const fromISO = todayStr+'T00:00:00Z';
   const toISO = todayStr+'T23:59:59Z';
-  const [ud, rd, dd, ad] = await Promise.all([
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+  const tomorrowStr = ymd(tomorrow);
+  const fromISO1 = tomorrowStr+'T00:00:00Z';
+  const toISO1 = tomorrowStr+'T23:59:59Z';
+  const [ud, rd, dd, ad, td] = await Promise.all([
     apiFetch('/inventory/v1/units?propertyId='+propId+'&pageSize=500'),
     apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=InHouse&pageSize=500'),
     // alle Zimmer mit Abreise HEUTE (egal ob noch InHouse oder schon CheckedOut),
@@ -639,6 +655,9 @@ async function fetchPropertyData(propId) {
     // mit Abreise UND Anreise am selben Tag muss der Reinigungs-Kommentar von der
     // Folgereservierung kommen, nicht vom abreisenden Gast
     apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=Confirmed&status=InHouse&dateFilter=Arrival&from='+fromISO+'&to='+toISO+'&pageSize=500'),
+    // alle Zimmer mit Abreise MORGEN (Folgetag) — für den Zwangsreinigungstrigger:
+    // kein ZR, wenn der Gast am Folgetag ohnehin abreist
+    apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=InHouse&dateFilter=Departure&from='+fromISO1+'&to='+toISO1+'&pageSize=500'),
   ]);
   const resMap = {};
   (rd.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) resMap[uid]=r; });
@@ -646,6 +665,8 @@ async function fetchPropertyData(propId) {
   (dd.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) depUnits.add(uid); });
   const arrMap = {};
   (ad.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) arrMap[uid]=r; });
+  const depTomorrowUnits = new Set();
+  (td.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) depTomorrowUnits.add(uid); });
   return (ud.units||[]).map(u => {
     const res = resMap[u.id];
     const nights = res ? Math.max(0, Math.floor((today - new Date(res.arrival.split('T')[0])) / 86400000)) : 0;
@@ -653,12 +674,14 @@ async function fetchPropertyData(propId) {
     // zeigen (relevant für die Vorbereitung des Zimmers), nicht den des abreisenden Gasts.
     const turnoverRes = depUnits.has(u.id) ? arrMap[u.id] : null;
     const cm = turnoverRes ? (turnoverRes.comment||'') : (res?.comment||'');
-    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:depUnits.has(u.id), cm };
+    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:depUnits.has(u.id), dT1:depTomorrowUnits.has(u.id), cm };
   });
 }
 
 const rKey    = (p,n) => p+'_'+n;
-const isZR    = u => u.c==='Dirty'&&u.o&&u.nights>=2&&u.nights%2===0&&!u.dT;
+// Zwangsreinigung (ZR): alle 2 Nächte, außer der Gast reist HEUTE oder MORGEN
+// (Folgetag) ab — dann übernimmt die reguläre Abreise-Reinigung.
+const isZR    = u => u.c==='Dirty'&&u.o&&u.nights>=2&&u.nights%2===0&&!u.dT&&!u.dT1;
 const getCond = (u,p) => S.conditions[rKey(p,u.n)]||u.c;
 const fmtDur  = s => String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
 const fmtDurL = s => { const m=Math.floor(s/60); return m<1?s+'s':m+' min '+s%60+'s'; };
@@ -715,7 +738,7 @@ function buildApp(){
   return `
 <div class="hdr">
   <div class="hdr-row">
-    <h1>MK Housekeeping</h1>
+    <h1>MK Housekeeping <span style="font-size:9px;font-weight:400;opacity:.4;vertical-align:middle;">v${APP_VERSION}</span></h1>
     <div class="hdr-right">
       <span class="user-chip">${S.currentUser.id} · ${S.currentUser.name.split(' ')[0]}</span>
       <span class="role-badge ${S.role==='admin'?'role-admin':'role-hk'}">${S.role==='admin'?t('role_admin'):t('role_hk')}</span>
@@ -736,6 +759,7 @@ function scrLogin(){
     <div class="login-logo">🏰</div>
     <div class="login-title">MK Housekeeping</div>
     <div class="login-sub">${t('login_sub')}</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:-14px;margin-bottom:14px;">v${APP_VERSION}</div>
     <div class="login-lang">${langSwitcher()}</div>
     <input id="li-user" class="login-input" placeholder="${t('login_user_ph')}" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('li-pass').focus()">
     <input id="li-pass" type="password" class="login-input" placeholder="${t('login_pass_ph')}" autocomplete="current-password" onkeydown="if(event.key==='Enter')ev_login()">
@@ -839,7 +863,7 @@ function scrRooms(){
 
   return `${breakBar()}
   ${S.role==='housekeeper'?`<div class="scope-row"><button class="fbtn${S.hkScope==='mine'?' act':''}" onclick="ev_hkScope('mine')">${t('scope_mine')}</button><button class="fbtn${S.hkScope==='all'?' act':''}" onclick="ev_hkScope('all')">${t('scope_all')}</button></div>`:''}
-  ${S.role==='admin'?`<div class="scope-row"><button class="fbtn${S.multiSelect?' act':''}" onclick="ev_toggleMultiSelect()">${S.multiSelect?t('multi_select_exit'):t('multi_select_enter')}</button></div>`:''}
+  ${S.role==='admin'?`<div class="scope-row"><button class="fbtn${S.multiSelect?' act':''}" onclick="ev_toggleMultiSelect()">${S.multiSelect?t('multi_select_exit'):t('multi_select_enter')}</button><button class="fbtn" onclick="ev_clearAllAssignments()">${t('clear_all_assignments_btn')}</button></div>`:''}
   ${S.multiSelect?multiAssignBar():S.selRoom?panel:`<div class="stat-row">
     <div class="stat${st.zr>0?' zr':''}"><div class="n">${st.zr>0?st.zr:st.dirty}</div><div class="l">${st.zr>0?t('stat_zr_due'):t('stat_dirty')}</div></div>
     <div class="stat"><div class="n">${st.insp}</div><div class="l">${t('stat_inspect')}</div></div>
@@ -1136,6 +1160,17 @@ async function ev_assignMulti(uid){
   if(failed.length) showToast(t('err_assignment_not_saved',{msg:failed[0].msg||t('unknown_error')}),'err');
   else showToast(t('multi_assign_done',{n:keys.length}),'ok');
 }
+async function ev_clearAllAssignments(){
+  const keys=Object.keys(S.assignments).filter(k=>k.startsWith(S.prop+'_'));
+  if(!keys.length){ showToast(t('no_assignments_to_clear'),'ok'); return; }
+  if(!confirm(t('confirm_clear_assignments',{n:keys.length}))) return;
+  keys.forEach(k=>{ delete S.assignments[k]; });
+  render();
+  const results=await Promise.all(keys.map(k=>pushAssignment('clear',k)));
+  const failed=results.filter(r=>!r.ok);
+  if(failed.length) showToast(t('err_assignment_not_saved',{msg:failed[0].msg||t('unknown_error')}),'err');
+  else showToast(t('clear_assignments_done',{n:keys.length}),'ok');
+}
 function ev_assign(k,uid){
   if(S.assignments[k]===uid){
     delete S.assignments[k];
@@ -1253,6 +1288,7 @@ async function ev_completeInspection(k){
 }
 
 async function init(){
+  console.log('[MK Housekeeping] Version', APP_VERSION);
   await Promise.all([loadUsers(), loadCompletions(), loadDoubleUps(), loadBreaks(), loadAssignments()]);
   if(!S.loggedIn){
     try{
