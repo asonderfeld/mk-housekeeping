@@ -51,6 +51,7 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 .tile.ooo{background:#F1EFE8;border-color:#D3D1C7;}
 .tile.timing{border:2px solid #FAC775;background:#FAEEDA;}
 .tile.sel{outline:2.5px solid #36505d;outline-offset:1px;}
+.tile.msel{outline:2.5px solid #c8882a;outline-offset:1px;}
 .tile .rnum{font-size:16px;font-weight:600;color:#36505d;}
 .tile.zr .rnum{color:#fff;}
 .tile.dirty .rnum{color:#791F1F;}
@@ -212,6 +213,9 @@ const I18N = {
     ready_for_inspection:'Bereit zur Inspektion durch die Hausdame', complete_inspection_btn:'✓ Inspektion abschließen → Clean',
     clean_but_needs_doubleup:'Zimmer ist bereits gereinigt, muss aber aufgedoppelt werden',
     assigned_label:'✓ Zugeteilt', assign_btn:'Zuweisen', room_word:'Zimmer',
+    multi_select_enter:'Mehrfachauswahl', multi_select_exit:'Fertig',
+    multi_selected_count:'{n} Zimmer ausgewählt', multi_select_hint:'Tippe Zimmer an, um sie auszuwählen.',
+    multi_assign_done:'{n} Zimmer zugewiesen.',
     zr_due:'Zwangsreinigung fällig', regular_clean:'Reguläre Reinigung', cleaning_running:'Reinigungszeit läuft',
     reservation_comment:'📋 Reservierungskommentar', complete_cleaning_btn:'Reinigung abschließen → Inspektion', start_cleaning_btn:'▶ Reinigung starten',
     scope_mine:'Nur meine Zimmer', scope_all:'Alle Zimmer',
@@ -219,8 +223,8 @@ const I18N = {
     filter_all:'Alle', filter_zr:'ZR',
     sub_running:'läuft…', sub_stay:'Stay', sub_check:'Prüfen', sub_blocked:'Gesperrt', legend_departure:'Abreise', legend_active:'Aktiv',
     du_equipment_label:'Ausstattung',
-    du_type_babycot:'Babybett', du_type_sofabed:'Schlafsofa', du_type_dog:'Hund',
-    du_abbr_babycot:'Baby', du_abbr_sofabed:'Sofa', du_abbr_dog:'Hund',
+    du_type_babycot:'Babybett', du_type_sofabed:'Schlafsofa', du_type_dog:'Hund', du_type_extras:'Extras',
+    du_abbr_babycot:'Baby', du_abbr_sofabed:'Sofa', du_abbr_dog:'Hund', du_abbr_extras:'Extras',
     period_today:'Heute', period_month:'Im Monat', period_ytd:'YTD',
     stat_room_count:'Anzahl Zimmer', stat_avg_time:'Ø Reinigungszeit', stat_fastest:'Schnellste',
     performance_title:'Leistung {period}', rooms_word:'Zimmer', breaks_label:'Pausen', break_word:'Pause',
@@ -266,6 +270,9 @@ const I18N = {
     ready_for_inspection:'Ready for inspection by the supervisor', complete_inspection_btn:'✓ Complete inspection → Clean',
     clean_but_needs_doubleup:'Room is already cleaned but still needs extra setup',
     assigned_label:'✓ Assigned', assign_btn:'Assign', room_word:'Room',
+    multi_select_enter:'Select multiple', multi_select_exit:'Done',
+    multi_selected_count:'{n} rooms selected', multi_select_hint:'Tap rooms to select them.',
+    multi_assign_done:'{n} rooms assigned.',
     zr_due:'Forced cleaning due', regular_clean:'Regular cleaning', cleaning_running:'Cleaning time running',
     reservation_comment:'📋 Reservation note', complete_cleaning_btn:'Complete cleaning → Inspection', start_cleaning_btn:'▶ Start cleaning',
     scope_mine:'Only my rooms', scope_all:'All rooms',
@@ -273,8 +280,8 @@ const I18N = {
     filter_all:'All', filter_zr:'Forced',
     sub_running:'running…', sub_stay:'Stay', sub_check:'Check', sub_blocked:'Blocked', legend_departure:'Departure', legend_active:'Active',
     du_equipment_label:'Setup',
-    du_type_babycot:'Baby cot', du_type_sofabed:'Sofa bed', du_type_dog:'Dog',
-    du_abbr_babycot:'Baby', du_abbr_sofabed:'Sofa', du_abbr_dog:'Dog',
+    du_type_babycot:'Baby cot', du_type_sofabed:'Sofa bed', du_type_dog:'Dog', du_type_extras:'Extras',
+    du_abbr_babycot:'Baby', du_abbr_sofabed:'Sofa', du_abbr_dog:'Dog', du_abbr_extras:'Extras',
     period_today:'Today', period_month:'This month', period_ytd:'YTD',
     stat_room_count:'Number of rooms', stat_avg_time:'Avg. cleaning time', stat_fastest:'Fastest',
     performance_title:'Performance {period}', rooms_word:'rooms', breaks_label:'breaks', break_word:'Break',
@@ -320,6 +327,9 @@ const I18N = {
     ready_for_inspection:'Gati për inspektim nga përgjegjësja', complete_inspection_btn:'✓ Përfundo inspektimin → Pastër',
     clean_but_needs_doubleup:'Dhoma është pastruar, por duhet ende pajisje shtesë',
     assigned_label:'✓ Caktuar', assign_btn:'Cakto', room_word:'Dhoma',
+    multi_select_enter:'Zgjidh disa', multi_select_exit:'Gati',
+    multi_selected_count:'{n} dhoma të zgjedhura', multi_select_hint:'Prekni dhomat për t\'i zgjedhur.',
+    multi_assign_done:'{n} dhoma u caktuan.',
     zr_due:'Pastrim i detyrueshëm i nevojshëm', regular_clean:'Pastrim i rregullt', cleaning_running:'Koha e pastrimit po vazhdon',
     reservation_comment:'📋 Shënim rezervimi', complete_cleaning_btn:'Përfundo pastrimin → Inspektim', start_cleaning_btn:'▶ Fillo pastrimin',
     scope_mine:'Vetëm dhomat e mia', scope_all:'Të gjitha dhomat',
@@ -327,8 +337,8 @@ const I18N = {
     filter_all:'Të gjitha', filter_zr:'Detyrim',
     sub_running:'në vazhdim…', sub_stay:'Qëndrim', sub_check:'Kontrollo', sub_blocked:'Bllokuar', legend_departure:'Nisje', legend_active:'Aktive',
     du_equipment_label:'Pajisje',
-    du_type_babycot:'Shtrat foshnje', du_type_sofabed:'Kanape-shtrat', du_type_dog:'Qen',
-    du_abbr_babycot:'Foshnjë', du_abbr_sofabed:'Kanape', du_abbr_dog:'Qen',
+    du_type_babycot:'Shtrat foshnje', du_type_sofabed:'Kanape-shtrat', du_type_dog:'Qen', du_type_extras:'Ekstra',
+    du_abbr_babycot:'Foshnjë', du_abbr_sofabed:'Kanape', du_abbr_dog:'Qen', du_abbr_extras:'Ekstra',
     period_today:'Sot', period_month:'Këtë muaj', period_ytd:'Nga fillimi i vitit',
     stat_room_count:'Numri i dhomave', stat_avg_time:'Koha mesatare e pastrimit', stat_fastest:'Më e shpejta',
     performance_title:'Performanca {period}', rooms_word:'dhoma', breaks_label:'pushime', break_word:'Pushim',
@@ -374,6 +384,9 @@ const I18N = {
     ready_for_inspection:'Готово до перевірки керівником', complete_inspection_btn:'✓ Завершити перевірку → Чисто',
     clean_but_needs_doubleup:'Кімната вже прибрана, але потребує додаткової підготовки',
     assigned_label:'✓ Призначено', assign_btn:'Призначити', room_word:'Кімната',
+    multi_select_enter:'Вибрати кілька', multi_select_exit:'Готово',
+    multi_selected_count:'Вибрано кімнат: {n}', multi_select_hint:'Торкніться кімнат, щоб вибрати їх.',
+    multi_assign_done:'Призначено кімнат: {n}.',
     zr_due:'Потрібне примусове прибирання', regular_clean:'Звичайне прибирання', cleaning_running:'Час прибирання триває',
     reservation_comment:'📋 Примітка до резервації', complete_cleaning_btn:'Завершити прибирання → Перевірка', start_cleaning_btn:'▶ Почати прибирання',
     scope_mine:'Лише мої кімнати', scope_all:'Усі кімнати',
@@ -381,8 +394,8 @@ const I18N = {
     filter_all:'Усі', filter_zr:'Примус',
     sub_running:'триває…', sub_stay:'Проживання', sub_check:'Перевірка', sub_blocked:'Блоковано', legend_departure:'Виїзд', legend_active:'Активно',
     du_equipment_label:'Облаштування',
-    du_type_babycot:'Дитяче ліжечко', du_type_sofabed:'Диван-ліжко', du_type_dog:'Собака',
-    du_abbr_babycot:'Дитя', du_abbr_sofabed:'Диван', du_abbr_dog:'Пес',
+    du_type_babycot:'Дитяче ліжечко', du_type_sofabed:'Диван-ліжко', du_type_dog:'Собака', du_type_extras:'Додатково',
+    du_abbr_babycot:'Дитя', du_abbr_sofabed:'Диван', du_abbr_dog:'Пес', du_abbr_extras:'Дод.',
     period_today:'Сьогодні', period_month:'За місяць', period_ytd:'З початку року',
     stat_room_count:'Кількість кімнат', stat_avg_time:'Сер. час прибирання', stat_fastest:'Найшвидше',
     performance_title:'Продуктивність {period}', rooms_word:'кімнат', breaks_label:'перерв', break_word:'Перерва',
@@ -425,11 +438,11 @@ function t(key, vars){
   return str;
 }
 function duTypeLabel(type){
-  const map = {Babybett:'du_type_babycot', Schlafsofa:'du_type_sofabed', Hund:'du_type_dog'};
+  const map = {Babybett:'du_type_babycot', Schlafsofa:'du_type_sofabed', Hund:'du_type_dog', Extras:'du_type_extras'};
   return map[type] ? t(map[type]) : type;
 }
 function duTypeAbbr(type){
-  const map = {Babybett:'du_abbr_babycot', Schlafsofa:'du_abbr_sofabed', Hund:'du_abbr_dog'};
+  const map = {Babybett:'du_abbr_babycot', Schlafsofa:'du_abbr_sofabed', Hund:'du_abbr_dog', Extras:'du_abbr_extras'};
   return map[type] ? t(map[type]) : type;
 }
 function ev_setLang(code){
@@ -597,11 +610,12 @@ let S = {
   assignments:{}, conditions:{}, timers:{}, completedTimes:[], doubleUp:{}, doubleUpType:{}, doubleUpLocked:{},
   breakActive:{}, breakLog:[],
   selRoom:null, loadingProp:false, rtog:{1:true,2:true,3:true}, toast:null, statsPeriod:'today', statsPerson:null,
+  multiSelect:false, multiSel:new Set(),
   userFormOpen:false, userFormErr:'', userBusy:false, editUserId:null,
   lang: (function(){ try{ return localStorage.getItem(LANG_KEY)||'de'; }catch(e){ return 'de'; } })(),
 };
-const DOUBLEUP_TYPES=['Babybett','Schlafsofa','Hund'];
-const DOUBLEUP_ABBR={Babybett:'Baby',Schlafsofa:'Sofa',Hund:'Hund'};
+const DOUBLEUP_TYPES=['Babybett','Schlafsofa','Hund','Extras'];
+const DOUBLEUP_ABBR={Babybett:'Baby',Schlafsofa:'Sofa',Hund:'Hund',Extras:'Extras'};
 let timerIv = null;
 
 async function fetchProperties(allowedIds) {
@@ -615,21 +629,31 @@ async function fetchPropertyData(propId) {
   const todayStr = today.getFullYear()+'-'+pad2(today.getMonth()+1)+'-'+pad2(today.getDate());
   const fromISO = todayStr+'T00:00:00Z';
   const toISO = todayStr+'T23:59:59Z';
-  const [ud, rd, dd] = await Promise.all([
+  const [ud, rd, dd, ad] = await Promise.all([
     apiFetch('/inventory/v1/units?propertyId='+propId+'&pageSize=500'),
     apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=InHouse&pageSize=500'),
     // alle Zimmer mit Abreise HEUTE (egal ob noch InHouse oder schon CheckedOut),
     // damit der Koffer auch nach dem Checkout bis zur Reinigung sichtbar bleibt
     apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=InHouse&status=CheckedOut&dateFilter=Departure&from='+fromISO+'&to='+toISO+'&pageSize=500'),
+    // alle Anreisen HEUTE (egal ob schon eingecheckt oder noch nicht) — bei Zimmern
+    // mit Abreise UND Anreise am selben Tag muss der Reinigungs-Kommentar von der
+    // Folgereservierung kommen, nicht vom abreisenden Gast
+    apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=Confirmed&status=InHouse&dateFilter=Arrival&from='+fromISO+'&to='+toISO+'&pageSize=500'),
   ]);
   const resMap = {};
   (rd.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) resMap[uid]=r; });
   const depUnits = new Set();
   (dd.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) depUnits.add(uid); });
+  const arrMap = {};
+  (ad.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) arrMap[uid]=r; });
   return (ud.units||[]).map(u => {
     const res = resMap[u.id];
     const nights = res ? Math.max(0, Math.floor((today - new Date(res.arrival.split('T')[0])) / 86400000)) : 0;
-    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:depUnits.has(u.id), cm:res?.comment||'' };
+    // Same-Day-Turnover: Abreise + Anreise am selben Tag → Kommentar der Folgereservierung
+    // zeigen (relevant für die Vorbereitung des Zimmers), nicht den des abreisenden Gasts.
+    const turnoverRes = depUnits.has(u.id) ? arrMap[u.id] : null;
+    const cm = turnoverRes ? (turnoverRes.comment||'') : (res?.comment||'');
+    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:depUnits.has(u.id), cm };
   });
 }
 
@@ -741,6 +765,18 @@ function breakBar(){
   </div>`;
 }
 
+function multiAssignBar(){
+  const n=S.multiSel.size, hks=getHKs(S.prop);
+  return `<div class="panel"><h3>${t('multi_selected_count',{n})}</h3>
+  ${n?(hks.length?hks.map(h=>`<div class="hk-row"><div class="hk-info">
+      <div class="avatar" style="width:30px;height:30px;font-size:11px;background:${h.bg};color:${h.tx}">${h.id}</div>
+      <div><div class="hk-name">${h.name}</div><div class="hk-load">${getWL(h.id,S.prop)} ${t('room_word')}</div></div></div>
+      <button class="asgn-btn" onclick="ev_assignMulti('${h.id}')">${t('assign_btn')}</button>
+    </div>`).join(''):`<p style="font-size:12px;color:#888">${t('no_hk_configured')}</p>`)
+   :`<p style="font-size:12px;color:#888;">${t('multi_select_hint')}</p>`}
+  </div>`;
+}
+
 function scrRooms(){
   const us=S.units[S.prop]||[], st=getStats(S.prop);
   let fil=us;
@@ -803,7 +839,8 @@ function scrRooms(){
 
   return `${breakBar()}
   ${S.role==='housekeeper'?`<div class="scope-row"><button class="fbtn${S.hkScope==='mine'?' act':''}" onclick="ev_hkScope('mine')">${t('scope_mine')}</button><button class="fbtn${S.hkScope==='all'?' act':''}" onclick="ev_hkScope('all')">${t('scope_all')}</button></div>`:''}
-  ${S.selRoom?panel:`<div class="stat-row">
+  ${S.role==='admin'?`<div class="scope-row"><button class="fbtn${S.multiSelect?' act':''}" onclick="ev_toggleMultiSelect()">${S.multiSelect?t('multi_select_exit'):t('multi_select_enter')}</button></div>`:''}
+  ${S.multiSelect?multiAssignBar():S.selRoom?panel:`<div class="stat-row">
     <div class="stat${st.zr>0?' zr':''}"><div class="n">${st.zr>0?st.zr:st.dirty}</div><div class="l">${st.zr>0?t('stat_zr_due'):t('stat_dirty')}</div></div>
     <div class="stat"><div class="n">${st.insp}</div><div class="l">${t('stat_inspect')}</div></div>
     <div class="stat"><div class="n">${st.clean}</div><div class="l">${t('stat_clean')}</div></div>
@@ -814,7 +851,7 @@ function scrRooms(){
     const running=!!S.timers[k],tc=running?'timing':(zr?'zr':tcls(c));
     const au=S.assignments[k]?USERS.find(x=>x.id===S.assignments[k]):null;
     const sub=running?t('sub_running'):zr?`ZR·${u.nights}n`:c==='Dirty'&&u.o?`${t('sub_stay')}·${u.nights}n`:c==='CleanToBeInspected'?t('sub_check'):(c==='OutOfService'||c==='OutOfOrder')?t('sub_blocked'):'';
-    return`<div class="tile ${tc}${S.selRoom?.n===u.n?' sel':''}" onclick="ev_sel('${u.n}')">
+    return`<div class="tile ${tc}${S.selRoom?.n===u.n?' sel':''}${S.multiSelect&&S.multiSel.has(k)?' msel':''}" onclick="ev_sel('${u.n}')">
       ${running?'<div class="timer-dot"></div>':''}
       ${hasDU(k)?`<div class="du-badge">${S.doubleUp[k]?'2x':''}${(S.doubleUpType[k]||[]).length?' '+S.doubleUpType[k].map(duTypeAbbr).join('+'):''}</div>`:''}
       <div class="rnum">${u.n}</div><div class="sub">${sub}</div>
@@ -1073,7 +1110,32 @@ function ev_hkScope(s){ S.hkScope=s; render(); }
 function ev_statsPeriod(p){ S.statsPeriod=p; document.getElementById('hkc').innerHTML=buildScreen(); }
 function ev_statsPerson(uid){ S.statsPerson=S.statsPerson===uid?null:uid; document.getElementById('hkc').innerHTML=buildScreen(); }
 function ev_tog(id){ S.rtog[id]=!S.rtog[id];render(); }
-function ev_sel(n){ S.selRoom=S.selRoom?.n===n?null:{n,prop:S.prop}; stopTimerIv(); document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv(); }
+function ev_sel(n){
+  if(S.multiSelect){ ev_toggleMultiSel(n); return; }
+  S.selRoom=S.selRoom?.n===n?null:{n,prop:S.prop}; stopTimerIv(); document.getElementById('hkc').innerHTML=buildScreen(); maybeTimerIv();
+}
+function ev_toggleMultiSelect(){
+  S.multiSelect=!S.multiSelect;
+  S.multiSel=new Set();
+  S.selRoom=null;
+  render();
+}
+function ev_toggleMultiSel(n){
+  const k=rKey(S.prop,n);
+  if(S.multiSel.has(k)) S.multiSel.delete(k); else S.multiSel.add(k);
+  document.getElementById('hkc').innerHTML=buildScreen();
+}
+async function ev_assignMulti(uid){
+  const keys=Array.from(S.multiSel);
+  if(!keys.length) return;
+  keys.forEach(k=>{ S.assignments[k]=uid; });
+  S.multiSel=new Set(); S.multiSelect=false;
+  render();
+  const results=await Promise.all(keys.map(k=>pushAssignment('set',k,uid)));
+  const failed=results.filter(r=>!r.ok);
+  if(failed.length) showToast(t('err_assignment_not_saved',{msg:failed[0].msg||t('unknown_error')}),'err');
+  else showToast(t('multi_assign_done',{n:keys.length}),'ok');
+}
 function ev_assign(k,uid){
   if(S.assignments[k]===uid){
     delete S.assignments[k];
@@ -1134,6 +1196,10 @@ async function ev_inspect(k){
     entry={uid:S.timers[k].uid,prop:pts[0],room:pts.slice(1).join('_'),duration:dur,ts:Date.now()};
     S.completedTimes.push(entry); delete S.timers[k]; }
   S.conditions[k]='CleanToBeInspected'; S.selRoom=null;
+  // Zuweisung an den Housekeeper wird nach erfolgreicher Reinigung entfernt —
+  // Zimmer ist fertig, das Housekeeping-Team ist wieder frei für neue Zimmer.
+  const hadAssignment=!!S.assignments[k];
+  if(hadAssignment) delete S.assignments[k];
   if(hasDU(k)&&!S.doubleUpLocked[k]){
     S.doubleUpLocked[k]=true;
     pushDoubleUp('set',k,S.doubleUpType[k]||[],true,!!S.doubleUp[k]).then(r=>{ if(!r.ok) showToast(t('err_doubleup_not_saved',{msg:r.msg||t('unknown_error')}),'err'); });
@@ -1149,6 +1215,10 @@ async function ev_inspect(k){
     const r=await pushCompletion(entry);
     if(!r.ok) showToast(t('err_completion_not_saved',{msg:r.msg||t('unknown_error')}),'err');
   }
+  if(hadAssignment){
+    const r=await pushAssignment('clear',k);
+    if(!r.ok) showToast(t('err_assignment_not_saved',{msg:r.msg||t('unknown_error')}),'err');
+  }
 }
 
 async function ev_completeDoubleUp(k){
@@ -1157,10 +1227,17 @@ async function ev_completeDoubleUp(k){
     entry={uid:S.timers[k].uid,prop:pts[0],room:pts.slice(1).join('_'),duration:dur,ts:Date.now()};
     S.completedTimes.push(entry); delete S.timers[k]; }
   S.selRoom=null;
+  // Zuweisung wird auch beim Abschluss einer reinen Aufdoppeln-Aufgabe entfernt.
+  const hadAssignment=!!S.assignments[k];
+  if(hadAssignment) delete S.assignments[k];
   render();
   if(entry){
     const r=await pushCompletion(entry);
     if(!r.ok) showToast(t('err_completion_not_saved',{msg:r.msg||t('unknown_error')}),'err');
+  }
+  if(hadAssignment){
+    const r=await pushAssignment('clear',k);
+    if(!r.ok) showToast(t('err_assignment_not_saved',{msg:r.msg||t('unknown_error')}),'err');
   }
 }
 
