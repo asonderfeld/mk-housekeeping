@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "ioredis": "^5.4.1"
+    "bcryptjs": "^2.4.3",
+    "ioredis": "^5.11.1"
   }
 }
