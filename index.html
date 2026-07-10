@@ -170,7 +170,14 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 const API = '/api/apaleo';
 // Versions-ID: ab jetzt bei jeder inhaltlichen Änderung hochzählen (SemVer-artig:
 // MAJOR.MINOR.PATCH). Sichtbar im Header und auf dem Login-Screen für Support/Debugging.
-const APP_VERSION = '6.2.0';
+const APP_VERSION = '6.3.0';
+
+// Reservierungskommentare kommen vom Gast oder der OTA (Booking.com etc.) und
+// landen unverändert in u.cm. Vor jeder innerHTML-Ausgabe escapen, sonst kann
+// ein präparierter Kommentar Script im Browser der Reinigungskraft ausführen.
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 const PROPERTY_NAMES = {
   ARNS:'Gästehäuser Arnstorf', BER:'Berlin', EBO:'Eschborn', FRA:'Frankfurt',
@@ -518,13 +525,20 @@ async function loadBreaks(){
 }
 
 const LOGIN_KEY = 'mkhk_session';
+const TOKEN_KEY = 'mkhk_token';
 function userProps(u){ return u.props.includes('alle') ? Object.keys(PROPERTY_NAMES) : u.props; }
+
+// Session-Token, das der Server beim Login ausstellt (siehe api/users.js).
+// Ersetzt das bloße Vertrauen auf eine in localStorage gespeicherte User-Id —
+// jede sensible API-Route prüft dieses Token jetzt serverseitig.
+function getToken(){ try{ return localStorage.getItem(TOKEN_KEY)||''; }catch(e){ return ''; } }
+function setToken(tok){ try{ if(tok) localStorage.setItem(TOKEN_KEY,tok); else localStorage.removeItem(TOKEN_KEY); }catch(e){} }
 
 async function apiFetch(path, method='GET', body=null) {
   const res = await fetch(API, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({path, method, body}),
+    body: JSON.stringify({path, method, body, token: getToken()}),
   });
   const text = await res.text();
   if (!res.ok) {
@@ -539,7 +553,7 @@ async function usersApiFetch(payload) {
   const res = await fetch('/api/users', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(payload),
+    body: JSON.stringify(Object.assign({token: getToken()}, payload)),
   });
   const text = await res.text();
   let json; try { json = text ? JSON.parse(text) : {}; } catch(e) { json = {}; }
@@ -566,7 +580,20 @@ async function pushAssignment(action, key, uid) {
     const res = await fetch('/api/assignments', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ action, key, uid }),
+      body: JSON.stringify({ action, key, uid, token: getToken() }),
+    });
+    const text = await res.text();
+    let json; try { json = text ? JSON.parse(text) : {}; } catch(e) { json = {}; }
+    if (!res.ok) return { ok:false, msg: json.error || ('HTTP ' + res.status) };
+    return { ok:true };
+  }catch(e){ return { ok:false, msg: e.message }; }
+}
+async function pushClearProperty(prop) {
+  try{
+    const res = await fetch('/api/assignments', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ action:'clearProperty', prop, token: getToken() }),
     });
     const text = await res.text();
     let json; try { json = text ? JSON.parse(text) : {}; } catch(e) { json = {}; }
@@ -853,7 +880,7 @@ function scrRooms(){
         panel=`<div class="panel"><h3>${t('room_word')} ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${hasDU(k)?` <span class="du-badge-inline">${S.doubleUp[k]?t('tab_doubleups'):t('du_equipment_label')}${(S.doubleUpType[k]||[]).length?' · '+S.doubleUpType[k].map(duTypeLabel).join(' + '):''}</span>`:''}</h3>
         <div style="font-size:12px;color:#888;margin-bottom:6px;">${isDU?t('clean_but_needs_doubleup'):zr?t('zr_due'):t('regular_clean')}</div>
         ${has?`<div class="timer-box"><div class="timer-lbl">${t('cleaning_running')}</div><div class="timer-val" id="live-timer">${fmtDur(el)}</div></div>
-        ${u.cm?`<div class="res-comment-box"><div class="res-comment-lbl">${t('reservation_comment')}</div><div class="res-comment-txt">${u.cm}</div></div>`:''}
+        ${u.cm?`<div class="res-comment-box"><div class="res-comment-lbl">${t('reservation_comment')}</div><div class="res-comment-txt">${esc(u.cm)}</div></div>`:''}
         <button class="action-btn btn-done" onclick="${isDU?`ev_completeDoubleUp('${k}')`:`ev_inspect('${k}')`}">${t('complete_cleaning_btn')}</button>`
         :`<button class="action-btn btn-start" onclick="ev_startTimer('${k}')">${t('start_cleaning_btn')}</button>`}
         </div>`;
@@ -1101,24 +1128,30 @@ function matchUser(input){
   if(!v) return null;
   return USERS.find(u=>u.id.toLowerCase()===v||u.name.toLowerCase()===v||u.name.split(' ')[0].toLowerCase()===v);
 }
-function ev_login(){
+async function ev_login(){
   const uVal=document.getElementById('li-user').value;
   const pVal=document.getElementById('li-pass').value;
-  const user=matchUser(uVal);
-  if(!user||user.pass!==pVal){ S.loginError=t('login_err'); render(); return; }
-  doLogin(user);
+  const matched=matchUser(uVal);
+  if(!matched){ S.loginError=t('login_err'); render(); return; }
+  try{
+    const r = await usersApiFetch({action:'login', id:matched.id, pass:pVal});
+    doLogin(r.user, r.token);
+  }catch(e){ S.loginError=t('login_err'); render(); }
 }
-function doLogin(user){
+function doLogin(user, token){
   S.loggedIn=true; S.currentUser=user; S.role=user.role; S.loginError='';
   S.prop=null; S.properties=[]; S.units={}; S.selRoom=null; S.screen='rooms'; S.filter='all'; S.hkScope='mine';
   if(user.lang){ S.lang=user.lang; try{ localStorage.setItem(LANG_KEY,user.lang); }catch(e){} }
   try{ localStorage.setItem(LOGIN_KEY,user.id); }catch(e){}
+  setToken(token);
   init();
 }
 function ev_logout(){
+  usersApiFetch({action:'logout'}).catch(()=>{});
   S.loggedIn=false; S.currentUser=null; S.loginError='';
   S.prop=null; S.properties=[]; S.units={}; S.selRoom=null;
   try{ localStorage.removeItem(LOGIN_KEY); }catch(e){}
+  setToken('');
   render();
 }
 async function ev_prop(p){
@@ -1166,9 +1199,8 @@ async function ev_clearAllAssignments(){
   if(!confirm(t('confirm_clear_assignments',{n:keys.length}))) return;
   keys.forEach(k=>{ delete S.assignments[k]; });
   render();
-  const results=await Promise.all(keys.map(k=>pushAssignment('clear',k)));
-  const failed=results.filter(r=>!r.ok);
-  if(failed.length) showToast(t('err_assignment_not_saved',{msg:failed[0].msg||t('unknown_error')}),'err');
+  const r=await pushClearProperty(S.prop);
+  if(!r.ok) showToast(t('err_assignment_not_saved',{msg:r.msg||t('unknown_error')}),'err');
   else showToast(t('clear_assignments_done',{n:keys.length}),'ok');
 }
 function ev_assign(k,uid){
@@ -1290,12 +1322,15 @@ async function ev_completeInspection(k){
 async function init(){
   console.log('[MK Housekeeping] Version', APP_VERSION);
   await Promise.all([loadUsers(), loadCompletions(), loadDoubleUps(), loadBreaks(), loadAssignments()]);
-  if(!S.loggedIn){
+  if(!S.loggedIn && getToken()){
     try{
-      const savedId=localStorage.getItem(LOGIN_KEY);
-      const saved=savedId?USERS.find(u=>u.id===savedId):null;
-      if(saved){ S.loggedIn=true; S.currentUser=saved; S.role=saved.role; if(saved.lang) S.lang=saved.lang; }
-    }catch(e){}
+      const r = await usersApiFetch({action:'whoami'});
+      S.loggedIn=true; S.currentUser=r.user; S.role=r.user.role; if(r.user.lang) S.lang=r.user.lang;
+    }catch(e){
+      // Token abgelaufen/ungültig — alte Sitzung verwerfen, Login erneut anfordern.
+      try{ localStorage.removeItem(LOGIN_KEY); }catch(_){}
+      setToken('');
+    }
   }
   if(!S.loggedIn){ render(); return; }
 
