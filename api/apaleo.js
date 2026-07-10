@@ -1,8 +1,28 @@
 // MK Housekeeping — Apaleo API Proxy (Vercel Serverless Function)
+// Sicherheits-Update: Dieser Proxy hängt das echte Apaleo-Token an, das der
+// Client nie sieht — vorher konnte man mit der bloßen Vercel-URL beliebige
+// Apaleo-Endpunkte lesen/schreiben (auch ohne App-Login). Jetzt: (1) nur die
+// paar Pfade erlaubt, die die App tatsächlich braucht, (2) gültige App-Session
+// (siehe _auth.js) erforderlich.
 const https = require('https');
+const { redis } = require('./_redis');
+const { getSession, tokenFromReq } = require('./_auth');
 
 const TOKEN_HOST = 'identity.apaleo.com';
 const API_HOST   = 'api.apaleo.com';
+
+// Nur diese Apaleo-Pfade nutzt die App wirklich (Zimmerliste, Belegung,
+// Reservierungen, Zimmerzustand setzen). Alles andere wird abgelehnt.
+const ALLOWED_PATH_PREFIXES = [
+  '/inventory/v1/properties',
+  '/inventory/v1/units',
+  '/booking/v1/reservations',
+  '/operations/v1/units-condition',
+];
+
+function isAllowedPath(pathname) {
+  return ALLOWED_PATH_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'));
+}
 
 let _token = null, _tokenExp = 0;
 
@@ -44,10 +64,16 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST')    { res.status(405).json({ error: 'Method Not Allowed' }); return; }
 
   try {
-    const token = await getToken();
+    const r = redis();
+    const session = await getSession(r, tokenFromReq(req));
+    if (!session) { res.status(401).json({ error: 'Bitte erneut anmelden.' }); return; }
+
     const { path, method = 'GET', body } = req.body || {};
     if (!path) { res.status(400).json({ error: '"path" fehlt' }); return; }
     const urlObj = new URL('https://' + API_HOST + path);
+    if (!isAllowedPath(urlObj.pathname)) { res.status(403).json({ error: 'Pfad nicht erlaubt: ' + urlObj.pathname }); return; }
+
+    const token = await getToken();
     const apiRes = await httpsReq(API_HOST, urlObj.pathname + urlObj.search, method,
       {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'},
       body ? JSON.stringify(body) : '');
