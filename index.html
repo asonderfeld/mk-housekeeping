@@ -170,7 +170,7 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 const API = '/api/apaleo';
 // Versions-ID: ab jetzt bei jeder inhaltlichen Änderung hochzählen (SemVer-artig:
 // MAJOR.MINOR.PATCH). Sichtbar im Header und auf dem Login-Screen für Support/Debugging.
-const APP_VERSION = '6.3.0';
+const APP_VERSION = '6.4.0';
 
 // Reservierungskommentare kommen vom Gast oder der OTA (Booking.com etc.) und
 // landen unverändert in u.cm. Vor jeder innerHTML-Ausgabe escapen, sonst kann
@@ -713,6 +713,7 @@ const getCond = (u,p) => S.conditions[rKey(p,u.n)]||u.c;
 const fmtDur  = s => String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
 const fmtDurL = s => { const m=Math.floor(s/60); return m<1?s+'s':m+' min '+s%60+'s'; };
 const fmtTime = ts => { const d=new Date(ts); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+const fmtDate = ts => { const d=new Date(ts); return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'; };
 const tcls    = c => ({Clean:'clean',Dirty:'dirty',CleanToBeInspected:'inspect',OutOfService:'ooo',OutOfOrder:'ooo'}[c]||'dirty');
 const hasDU   = k => !!S.doubleUp[k] || (S.doubleUpType[k]||[]).length>0;
 
@@ -879,9 +880,9 @@ function scrRooms(){
         const el=has?Math.floor((Date.now()-S.timers[k].start)/1000):0;
         panel=`<div class="panel"><h3>${t('room_word')} ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${hasDU(k)?` <span class="du-badge-inline">${S.doubleUp[k]?t('tab_doubleups'):t('du_equipment_label')}${(S.doubleUpType[k]||[]).length?' · '+S.doubleUpType[k].map(duTypeLabel).join(' + '):''}</span>`:''}</h3>
         <div style="font-size:12px;color:#888;margin-bottom:6px;">${isDU?t('clean_but_needs_doubleup'):zr?t('zr_due'):t('regular_clean')}</div>
-        ${has?`<div class="timer-box"><div class="timer-lbl">${t('cleaning_running')}</div><div class="timer-val" id="live-timer">${fmtDur(el)}</div></div>
+        ${has?`<div class="timer-box"><div class="timer-lbl">${t('cleaning_running')}</div><div class="timer-val" id="live-timer">${fmtDur(el)}</div></div>`:''}
         ${u.cm?`<div class="res-comment-box"><div class="res-comment-lbl">${t('reservation_comment')}</div><div class="res-comment-txt">${esc(u.cm)}</div></div>`:''}
-        <button class="action-btn btn-done" onclick="${isDU?`ev_completeDoubleUp('${k}')`:`ev_inspect('${k}')`}">${t('complete_cleaning_btn')}</button>`
+        ${has?`<button class="action-btn btn-done" onclick="${isDU?`ev_completeDoubleUp('${k}')`:`ev_inspect('${k}')`}">${t('complete_cleaning_btn')}</button>`
         :`<button class="action-btn btn-start" onclick="ev_startTimer('${k}')">${t('start_cleaning_btn')}</button>`}
         </div>`;
       }
@@ -956,7 +957,7 @@ function scrStats(){
   <div style="font-size:11px;color:#888;margin-top:6px;">☕ ${hb.length} ${t('breaks_label')}${bTotal?' · '+fmtDurL(bTotal):''}</div>
   ${open?`<div class="hk-log-list">${timeline.length?timeline.map(e=>e.type==='clean'?`<div class="hk-log-row">
       <span class="hk-log-room">${t('log_room_prefix')} ${e.t.room} · ${e.t.prop}</span>
-      <span class="hk-log-time">${fmtTime(e.t.ts-e.t.duration*1000)} – ${fmtTime(e.t.ts)}</span>
+      <span class="hk-log-time">${fmtDate(e.t.ts)} · ${fmtTime(e.t.ts-e.t.duration*1000)} – ${fmtTime(e.t.ts)}</span>
       <span class="hk-log-dur">${fmtDurL(e.t.duration)}</span>
     </div>`:`<div class="hk-log-row">
       <span class="hk-log-room">☕ ${t('break_word')}</span>
@@ -966,7 +967,7 @@ function scrStats(){
   </div>`;}).join('')}
   ${all.length?`<div class="sec-title" style="margin-top:12px;">${t('last_completions')}</div>
   <div class="stat-card">${all.slice(-8).reverse().map(tm=>{const u=USERS.find(x=>x.id===tm.uid);
-  return`<div class="log-row"><div style="display:flex;align-items:center;gap:7px;"><div class="avatar" style="width:24px;height:24px;font-size:9px;background:${u?u.bg:'#eee'};color:${u?u.tx:'#666'}">${tm.uid}</div><span style="font-size:12px;">${t('log_room_prefix')} ${tm.room} · ${tm.prop}</span></div><span style="font-size:12px;font-weight:600;">${fmtDurL(tm.duration)}</span></div>`;}).join('')}</div>`
+  return`<div class="log-row"><div style="display:flex;align-items:center;gap:7px;"><div class="avatar" style="width:24px;height:24px;font-size:9px;background:${u?u.bg:'#eee'};color:${u?u.tx:'#666'}">${tm.uid}</div><span style="font-size:12px;">${t('log_room_prefix')} ${tm.room} · ${tm.prop}</span></div><div style="text-align:right;"><span style="font-size:12px;font-weight:600;">${fmtDurL(tm.duration)}</span><div style="font-size:10px;color:#888;">${fmtDate(tm.ts)}</div></div></div>`;}).join('')}</div>`
   :`<p style="font-size:12px;color:#888;text-align:center;padding:20px 0;">${t('no_cleanings_yet',{period:PERIODS[period].toLowerCase()})}</p>`}`;
 }
 
