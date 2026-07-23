@@ -64,6 +64,7 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 .tile .asgn{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:600;padding:1px 5px;border-radius:6px;white-space:nowrap;}
 .tile .du-badge{position:absolute;top:5px;left:5px;font-size:9px;font-weight:700;background:#59320f;color:#fff;padding:1px 5px;border-radius:6px;}
 .tile .dep-badge{position:absolute;bottom:3px;right:5px;font-size:12px;line-height:1;}
+.tile .guest-badge{position:absolute;bottom:3px;left:5px;font-size:12px;line-height:1;}
 .du-badge-inline{font-size:10px;background:#59320f;color:#fff;padding:2px 7px;border-radius:7px;font-weight:500;}
 .du-check-row{display:flex;align-items:center;gap:8px;padding:8px 0 10px;border-bottom:.5px solid #f0efe9;margin-bottom:6px;}
 .du-check-row label{font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;}
@@ -228,7 +229,7 @@ const I18N = {
     multi_assign_done:'{n} Zimmer zugewiesen.',
     clear_all_assignments_btn:'Alle Zuweisungen aufheben', confirm_clear_assignments:'Wirklich alle {n} Zuweisungen in diesem Haus aufheben?',
     clear_assignments_done:'{n} Zuweisungen aufgehoben.', no_assignments_to_clear:'Keine Zuweisungen in diesem Haus vorhanden.',
-    zr_due:'Zwangsreinigung fällig', regular_clean:'Reguläre Reinigung', cleaning_running:'Reinigungszeit läuft',
+    zr_due:'Zwangsreinigung fällig', zr_due_guest:'Wunschreinigung (Gast)', guest_request_title:'Gast hat Reinigung angefordert', legend_guest_request:'Gastwunsch', regular_clean:'Reguläre Reinigung', cleaning_running:'Reinigungszeit läuft',
     reservation_comment:'📋 Reservierungskommentar', complete_cleaning_btn:'Reinigung abschließen → Inspektion', start_cleaning_btn:'▶ Reinigung starten',
     scope_mine:'Nur meine Zimmer', scope_all:'Alle Zimmer',
     stat_zr_due:'ZR fällig', stat_dirty:'Dirty', stat_inspect:'Inspektion', stat_clean:'Clean',
@@ -245,7 +246,7 @@ const I18N = {
     no_doubleup_rooms:'Aktuell ist kein Zimmer als „aufgedoppelt" oder mit Sonderausstattung markiert.',
     doubled_rooms_title:'Aufgedoppelte Zimmer ({n})', no_type_chosen:'kein Typ gewählt',
     rules_title:'Automatisierungsregeln',
-    rule1_name:'Zwangsreinigung — 2-Nächte-Trigger', rule1_desc:'Stayover ≥2 Nächte, geradzahlig, Abreise weder heute noch morgen → ZR (rot)',
+    rule1_name:'Zwangsreinigung — 2-Nächte-Trigger', rule1_desc:'Stayover ≥2 Nächte, geradzahlig → ZR (rot)',
     rule2_name:'Tagesreinigung nach Check-out', rule2_desc:'Zimmer mit Abreise heute → automatisch Dirty nach Check-out',
     rule3_name:'Inspektions-Erinnerung', rule3_desc:'CleanToBeInspected länger als 2h → Push an Hausdame',
     rule_active:'Aktiv',
@@ -265,6 +266,7 @@ const I18N = {
     err_generic:'Fehler: {msg}',
     err_doubleup_not_saved:'Achtung: Aufdoppeln-Status NICHT gespeichert — {msg}',
     err_doubleup_not_reset:'Achtung: Aufdoppeln-Status NICHT zurückgesetzt — {msg}',
+    err_guestclean_not_cleared:'Achtung: Gast-Wunschreinigung NICHT zurückgesetzt — {msg}',
     err_condition_not_synced:'Achtung: Status wurde NICHT an Apaleo übertragen — {msg}',
     err_completion_not_saved:'Achtung: Reinigungszeit wurde NICHT dauerhaft gespeichert — {msg}',
     err_break_not_saved:'Achtung: Pause wurde NICHT dauerhaft gespeichert — {msg}',
@@ -287,7 +289,7 @@ const I18N = {
     multi_assign_done:'{n} rooms assigned.',
     clear_all_assignments_btn:'Clear all assignments', confirm_clear_assignments:'Really clear all {n} assignments in this property?',
     clear_assignments_done:'{n} assignments cleared.', no_assignments_to_clear:'No assignments in this property.',
-    zr_due:'Forced cleaning due', regular_clean:'Regular cleaning', cleaning_running:'Cleaning time running',
+    zr_due:'Forced cleaning due', zr_due_guest:'Guest-requested cleaning', guest_request_title:'Guest requested cleaning', legend_guest_request:'Guest request', regular_clean:'Regular cleaning', cleaning_running:'Cleaning time running',
     reservation_comment:'📋 Reservation note', complete_cleaning_btn:'Complete cleaning → Inspection', start_cleaning_btn:'▶ Start cleaning',
     scope_mine:'Only my rooms', scope_all:'All rooms',
     stat_zr_due:'Forced due', stat_dirty:'Dirty', stat_inspect:'Inspection', stat_clean:'Clean',
@@ -304,7 +306,7 @@ const I18N = {
     no_doubleup_rooms:'Currently no room is marked as needing extra setup.',
     doubled_rooms_title:'Rooms with extra setup ({n})', no_type_chosen:'no type chosen',
     rules_title:'Automation rules',
-    rule1_name:'Forced cleaning — 2-night trigger', rule1_desc:'Stayover ≥2 nights, even number, no departure today or tomorrow → forced cleaning (red)',
+    rule1_name:'Forced cleaning — 2-night trigger', rule1_desc:'Stayover ≥2 nights, even number → forced cleaning (red)',
     rule2_name:'Same-day cleaning after check-out', rule2_desc:'Room with departure today → automatically Dirty after check-out',
     rule3_name:'Inspection reminder', rule3_desc:'Awaiting inspection for more than 2h → notify supervisor',
     rule_active:'Active',
@@ -324,6 +326,7 @@ const I18N = {
     err_generic:'Error: {msg}',
     err_doubleup_not_saved:'Warning: extra-setup status NOT saved — {msg}',
     err_doubleup_not_reset:'Warning: extra-setup status NOT reset — {msg}',
+    err_guestclean_not_cleared:'Warning: guest cleaning request NOT cleared — {msg}',
     err_condition_not_synced:'Warning: status was NOT synced to Apaleo — {msg}',
     err_completion_not_saved:'Warning: cleaning time was NOT permanently saved — {msg}',
     err_break_not_saved:'Warning: break was NOT permanently saved — {msg}',
@@ -346,7 +349,7 @@ const I18N = {
     multi_assign_done:'{n} dhoma u caktuan.',
     clear_all_assignments_btn:'Hiq të gjitha caktimet', confirm_clear_assignments:'Të hiqen vërtet të gjitha {n} caktimet në këtë hotel?',
     clear_assignments_done:'{n} caktime u hoqën.', no_assignments_to_clear:'Asnjë caktim në këtë hotel.',
-    zr_due:'Pastrim i detyrueshëm i nevojshëm', regular_clean:'Pastrim i rregullt', cleaning_running:'Koha e pastrimit po vazhdon',
+    zr_due:'Pastrim i detyrueshëm i nevojshëm', zr_due_guest:'Kërkesë pastrimi (mysafiri)', guest_request_title:'Mysafiri ka kërkuar pastrim', legend_guest_request:'Kërkesë e mysafirit', regular_clean:'Pastrim i rregullt', cleaning_running:'Koha e pastrimit po vazhdon',
     reservation_comment:'📋 Shënim rezervimi', complete_cleaning_btn:'Përfundo pastrimin → Inspektim', start_cleaning_btn:'▶ Fillo pastrimin',
     scope_mine:'Vetëm dhomat e mia', scope_all:'Të gjitha dhomat',
     stat_zr_due:'Detyrim i nevojshëm', stat_dirty:'Të papastra', stat_inspect:'Inspektim', stat_clean:'Të pastra',
@@ -363,7 +366,7 @@ const I18N = {
     no_doubleup_rooms:'Aktualisht asnjë dhomë nuk është shënuar për pajisje shtesë.',
     doubled_rooms_title:'Dhoma me pajisje shtesë ({n})', no_type_chosen:'asnjë lloj i zgjedhur',
     rules_title:'Rregullat e automatizimit',
-    rule1_name:'Pastrim i detyrueshëm — aktivizim 2-net', rule1_desc:'Qëndrim ≥2 net, numër çift, jo nisje sot apo nesër → pastrim i detyrueshëm (kuq)',
+    rule1_name:'Pastrim i detyrueshëm — aktivizim 2-net', rule1_desc:'Qëndrim ≥2 net, numër çift → pastrim i detyrueshëm (kuq)',
     rule2_name:'Pastrim ditor pas check-out', rule2_desc:'Dhoma me nisje sot → automatikisht e papastër pas check-out',
     rule3_name:'Kujtues inspektimi', rule3_desc:'Në pritje inspektimi për më shumë se 2 orë → njoftim te përgjegjësja',
     rule_active:'Aktive',
@@ -383,6 +386,7 @@ const I18N = {
     err_generic:'Gabim: {msg}',
     err_doubleup_not_saved:'Kujdes: statusi i pajisjes shtesë NUK u ruajt — {msg}',
     err_doubleup_not_reset:'Kujdes: statusi i pajisjes shtesë NUK u rivendos — {msg}',
+    err_guestclean_not_cleared:'Kujdes: kërkesa e pastrimit nga mysafiri NUK u fshi — {msg}',
     err_condition_not_synced:'Kujdes: statusi NUK u sinkronizua me Apaleo — {msg}',
     err_completion_not_saved:'Kujdes: koha e pastrimit NUK u ruajt përgjithmonë — {msg}',
     err_break_not_saved:'Kujdes: pushimi NUK u ruajt përgjithmonë — {msg}',
@@ -405,7 +409,7 @@ const I18N = {
     multi_assign_done:'Призначено кімнат: {n}.',
     clear_all_assignments_btn:'Скасувати всі призначення', confirm_clear_assignments:'Дійсно скасувати всі {n} призначення в цьому готелі?',
     clear_assignments_done:'Скасовано призначень: {n}.', no_assignments_to_clear:'У цьому готелі немає призначень.',
-    zr_due:'Потрібне примусове прибирання', regular_clean:'Звичайне прибирання', cleaning_running:'Час прибирання триває',
+    zr_due:'Потрібне примусове прибирання', zr_due_guest:'Прибирання на прохання гостя', guest_request_title:'Гість запросив прибирання', legend_guest_request:'Запит гостя', regular_clean:'Звичайне прибирання', cleaning_running:'Час прибирання триває',
     reservation_comment:'📋 Примітка до резервації', complete_cleaning_btn:'Завершити прибирання → Перевірка', start_cleaning_btn:'▶ Почати прибирання',
     scope_mine:'Лише мої кімнати', scope_all:'Усі кімнати',
     stat_zr_due:'Потрібен примус', stat_dirty:'Брудні', stat_inspect:'Перевірка', stat_clean:'Чисті',
@@ -422,7 +426,7 @@ const I18N = {
     no_doubleup_rooms:'Наразі немає кімнат, позначених для додаткової підготовки.',
     doubled_rooms_title:'Кімнати з додатковою підготовкою ({n})', no_type_chosen:'тип не вибрано',
     rules_title:'Правила автоматизації',
-    rule1_name:'Примусове прибирання — тригер на 2 ночі', rule1_desc:'Проживання ≥2 ночі, парна кількість, виїзд не сьогодні і не завтра → примусове прибирання (червоний)',
+    rule1_name:'Примусове прибирання — тригер на 2 ночі', rule1_desc:'Проживання ≥2 ночі, парна кількість → примусове прибирання (червоний)',
     rule2_name:'Денне прибирання після виїзду', rule2_desc:'Кімната з виїздом сьогодні → автоматично «брудна» після виїзду',
     rule3_name:'Нагадування про перевірку', rule3_desc:'Очікує перевірки понад 2 год → сповіщення керівнику',
     rule_active:'Активно',
@@ -442,6 +446,7 @@ const I18N = {
     err_generic:'Помилка: {msg}',
     err_doubleup_not_saved:'Увага: статус додаткової підготовки НЕ збережено — {msg}',
     err_doubleup_not_reset:'Увага: статус додаткової підготовки НЕ скинуто — {msg}',
+    err_guestclean_not_cleared:'Увага: запит гостя на прибирання НЕ скинуто — {msg}',
     err_condition_not_synced:'Увага: статус НЕ синхронізовано з Apaleo — {msg}',
     err_completion_not_saved:'Увага: час прибирання НЕ збережено остаточно — {msg}',
     err_break_not_saved:'Увага: перерву НЕ збережено остаточно — {msg}',
@@ -506,6 +511,15 @@ async function loadDoubleUps(){
       }
     }
   }catch(e){ console.warn('[loadDoubleUps] konnte Aufdoppeln-Status nicht laden', e.message); }
+}
+
+async function loadGuestClean(){
+  try{
+    const r = await fetch('/api/guestclean',{cache:'no-store'});
+    if(r.ok){ const j = await r.json(); const g=j.guestClean;
+      if(g&&typeof g==='object'&&!Array.isArray(g)) S.guestClean=g;
+    }
+  }catch(e){ console.warn('[loadGuestClean] konnte Gast-Wunschreinigungen nicht laden', e.message); }
 }
 
 async function loadAssignments(){
@@ -616,6 +630,20 @@ async function pushDoubleUp(action, key, types, locked, need) {
   }catch(e){ return { ok:false, msg: e.message }; }
 }
 
+async function pushGuestCleanClear(key) {
+  try{
+    const res = await fetch('/api/guestclean', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ action:'clear', key }),
+    });
+    const text = await res.text();
+    let json; try { json = text ? JSON.parse(text) : {}; } catch(e) { json = {}; }
+    if (!res.ok) return { ok:false, msg: json.error || ('HTTP ' + res.status) };
+    return { ok:true };
+  }catch(e){ return { ok:false, msg: e.message }; }
+}
+
 async function pushBreak(entry) {
   try{
     const res = await fetch('/api/breaks', {
@@ -645,7 +673,7 @@ let S = {
   loggedIn:false, currentUser:null, loginError:'',
   role:'admin', prop:null, properties:[],
   units:{}, screen:'rooms', filter:'all', hkScope:'mine',
-  assignments:{}, conditions:{}, timers:{}, completedTimes:[], doubleUp:{}, doubleUpType:{}, doubleUpLocked:{},
+  assignments:{}, conditions:{}, timers:{}, completedTimes:[], doubleUp:{}, doubleUpType:{}, doubleUpLocked:{}, guestClean:{},
   breakActive:{}, breakLog:[],
   selRoom:null, loadingProp:false, rtog:{1:true,2:true,3:true}, toast:null, statsPeriod:'today', statsPerson:null,
   multiSelect:false, multiSel:new Set(),
@@ -668,11 +696,7 @@ async function fetchPropertyData(propId) {
   const todayStr = ymd(today);
   const fromISO = todayStr+'T00:00:00Z';
   const toISO = todayStr+'T23:59:59Z';
-  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
-  const tomorrowStr = ymd(tomorrow);
-  const fromISO1 = tomorrowStr+'T00:00:00Z';
-  const toISO1 = tomorrowStr+'T23:59:59Z';
-  const [ud, rd, dd, ad, td] = await Promise.all([
+  const [ud, rd, dd, ad] = await Promise.all([
     apiFetch('/inventory/v1/units?propertyId='+propId+'&pageSize=500'),
     apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=InHouse&pageSize=500'),
     // alle Zimmer mit Abreise HEUTE (egal ob noch InHouse oder schon CheckedOut),
@@ -682,9 +706,6 @@ async function fetchPropertyData(propId) {
     // mit Abreise UND Anreise am selben Tag muss der Reinigungs-Kommentar von der
     // Folgereservierung kommen, nicht vom abreisenden Gast
     apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=Confirmed&status=InHouse&dateFilter=Arrival&from='+fromISO+'&to='+toISO+'&pageSize=500'),
-    // alle Zimmer mit Abreise MORGEN (Folgetag) — für den Zwangsreinigungstrigger:
-    // kein ZR, wenn der Gast am Folgetag ohnehin abreist
-    apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=InHouse&dateFilter=Departure&from='+fromISO1+'&to='+toISO1+'&pageSize=500'),
   ]);
   const resMap = {};
   (rd.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) resMap[uid]=r; });
@@ -692,8 +713,6 @@ async function fetchPropertyData(propId) {
   (dd.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) depUnits.add(uid); });
   const arrMap = {};
   (ad.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) arrMap[uid]=r; });
-  const depTomorrowUnits = new Set();
-  (td.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) depTomorrowUnits.add(uid); });
   return (ud.units||[]).map(u => {
     const res = resMap[u.id];
     const nights = res ? Math.max(0, Math.floor((today - new Date(res.arrival.split('T')[0])) / 86400000)) : 0;
@@ -701,14 +720,19 @@ async function fetchPropertyData(propId) {
     // zeigen (relevant für die Vorbereitung des Zimmers), nicht den des abreisenden Gasts.
     const turnoverRes = depUnits.has(u.id) ? arrMap[u.id] : null;
     const cm = turnoverRes ? (turnoverRes.comment||'') : (res?.comment||'');
-    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:depUnits.has(u.id), dT1:depTomorrowUnits.has(u.id), cm };
+    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:depUnits.has(u.id), cm };
   });
 }
 
 const rKey    = (p,n) => p+'_'+n;
-// Zwangsreinigung (ZR): alle 2 Nächte, außer der Gast reist HEUTE oder MORGEN
-// (Folgetag) ab — dann übernimmt die reguläre Abreise-Reinigung.
-const isZR    = u => u.c==='Dirty'&&u.o&&u.nights>=2&&u.nights%2===0&&!u.dT&&!u.dT1;
+// Zwangsreinigung (ZR): alle 2 Nächte (Nacht 2, 4, 6 ...) bei belegten Zimmern —
+// ODER Gast hat per QR-Code/guest.html eine Wunschreinigung angefordert
+// (S.guestClean, siehe api/guestclean.js). Beide Fälle setzen weiterhin
+// voraus, dass das Zimmer laut Apaleo tatsächlich "Dirty" ist — eine
+// Gastanfrage kann ein frisch gereinigtes Zimmer nicht rückwirkend
+// "schmutzig" machen, sie greift, sobald es das nächste Mal wieder Dirty ist.
+const isGuestClean = (u,p=S.prop) => !!S.guestClean[rKey(p,u.n)];
+const isZR    = (u,p=S.prop) => u.c==='Dirty'&&u.o&&(isGuestClean(u,p)||(u.nights>=1&&u.nights%2===0));
 const getCond = (u,p) => S.conditions[rKey(p,u.n)]||u.c;
 const fmtDur  = s => String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
 const fmtDurL = s => { const m=Math.floor(s/60); return m<1?s+'s':m+' min '+s%60+'s'; };
@@ -870,7 +894,7 @@ function scrRooms(){
             <button class="asgn-btn${S.assignments[k]===h.id?' assigned':''}" onclick="ev_assign('${k}','${h.id}')">${S.assignments[k]===h.id?t('assigned_label'):t('assign_btn')}</button>
           </div>`).join(''):`<p style="font-size:12px;color:#888">${t('no_hk_configured')}</p>`);
         }
-        panel=`<div class="panel"><h3>${t('room_word')} ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${u.dT?' 🧳':''}</h3>
+        panel=`<div class="panel"><h3>${t('room_word')} ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${isGuestClean(u)?' 🔔':''}${u.dT?' 🧳':''}</h3>
         ${duBlock}
         ${actionBlock}
         </div>`;
@@ -878,8 +902,8 @@ function scrRooms(){
         const isDU=c==='Clean'&&hasDU(k);
         const has=!!S.timers[k];
         const el=has?Math.floor((Date.now()-S.timers[k].start)/1000):0;
-        panel=`<div class="panel"><h3>${t('room_word')} ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${hasDU(k)?` <span class="du-badge-inline">${S.doubleUp[k]?t('tab_doubleups'):t('du_equipment_label')}${(S.doubleUpType[k]||[]).length?' · '+S.doubleUpType[k].map(duTypeLabel).join(' + '):''}</span>`:''}</h3>
-        <div style="font-size:12px;color:#888;margin-bottom:6px;">${isDU?t('clean_but_needs_doubleup'):zr?t('zr_due'):t('regular_clean')}</div>
+        panel=`<div class="panel"><h3>${t('room_word')} ${u.n}${zr?' <span class="zr-badge">ZR</span>':''}${isGuestClean(u)?' 🔔':''}${hasDU(k)?` <span class="du-badge-inline">${S.doubleUp[k]?t('tab_doubleups'):t('du_equipment_label')}${(S.doubleUpType[k]||[]).length?' · '+S.doubleUpType[k].map(duTypeLabel).join(' + '):''}</span>`:''}</h3>
+        <div style="font-size:12px;color:#888;margin-bottom:6px;">${isDU?t('clean_but_needs_doubleup'):zr?(isGuestClean(u)?t('zr_due_guest'):t('zr_due')):t('regular_clean')}</div>
         ${has?`<div class="timer-box"><div class="timer-lbl">${t('cleaning_running')}</div><div class="timer-val" id="live-timer">${fmtDur(el)}</div></div>`:''}
         ${u.cm?`<div class="res-comment-box"><div class="res-comment-lbl">${t('reservation_comment')}</div><div class="res-comment-txt">${esc(u.cm)}</div></div>`:''}
         ${has?`<button class="action-btn btn-done" onclick="${isDU?`ev_completeDoubleUp('${k}')`:`ev_inspect('${k}')`}">${t('complete_cleaning_btn')}</button>`
@@ -902,12 +926,13 @@ function scrRooms(){
     const c=getCond(u,S.prop),zr=isZR(u)&&c==='Dirty',k=rKey(S.prop,u.n);
     const running=!!S.timers[k],tc=running?'timing':(zr?'zr':tcls(c));
     const au=S.assignments[k]?USERS.find(x=>x.id===S.assignments[k]):null;
-    const sub=running?t('sub_running'):zr?`ZR·${u.nights}n`:c==='Dirty'&&u.o?`${t('sub_stay')}·${u.nights}n`:c==='CleanToBeInspected'?t('sub_check'):(c==='OutOfService'||c==='OutOfOrder')?t('sub_blocked'):'';
+    const sub=running?t('sub_running'):zr?(isGuestClean(u)?`ZR·🔔`:`ZR·${u.nights}n`):c==='Dirty'&&u.o?`${t('sub_stay')}·${u.nights}n`:c==='CleanToBeInspected'?t('sub_check'):(c==='OutOfService'||c==='OutOfOrder')?t('sub_blocked'):'';
     return`<div class="tile ${tc}${S.selRoom?.n===u.n?' sel':''}${S.multiSelect&&S.multiSel.has(k)?' msel':''}" onclick="ev_sel('${u.n}')">
       ${running?'<div class="timer-dot"></div>':''}
       ${hasDU(k)?`<div class="du-badge">${S.doubleUp[k]?'2x':''}${(S.doubleUpType[k]||[]).length?' '+S.doubleUpType[k].map(duTypeAbbr).join('+'):''}</div>`:''}
       <div class="rnum">${u.n}</div><div class="sub">${sub}</div>
       ${u.dT?'<div class="dep-badge">🧳</div>':''}
+      ${isGuestClean(u)?`<div class="guest-badge" title="${t('guest_request_title')}">🔔</div>`:''}
       ${au?`<div class="asgn" style="background:${au.bg};color:${au.tx}">${au.id}</div>`:''}
     </div>`;
   }).join('')}</div>
@@ -918,6 +943,7 @@ function scrRooms(){
     <div class="leg"><div class="leg-dot" style="background:#85B7EB"></div>${t('stat_inspect')}</div>
     <div class="leg"><div class="leg-dot" style="background:#97C459"></div>${t('stat_clean')}</div>
     <div class="leg">🧳 ${t('legend_departure')}</div>
+    <div class="leg">🔔 ${t('legend_guest_request')}</div>
   </div>`;
 }
 
@@ -1272,6 +1298,11 @@ async function ev_inspect(k){
     S.doubleUpLocked[k]=true;
     pushDoubleUp('set',k,S.doubleUpType[k]||[],true,!!S.doubleUp[k]).then(r=>{ if(!r.ok) showToast(t('err_doubleup_not_saved',{msg:r.msg||t('unknown_error')}),'err'); });
   }
+  // Gast-Wunschreinigung ist erledigt, sobald das Zimmer zur Inspektion
+  // übergeben wird — Markierung sofort entfernen (kein Lock-Zyklus wie beim
+  // Aufdoppeln, da die Anfrage pro Reinigungswunsch nur einmal gilt).
+  const hadGuestClean=!!S.guestClean[k];
+  if(hadGuestClean) delete S.guestClean[k];
   const u=(S.units[S.prop]||[]).find(x=>x.n===k.split('_').slice(1).join('_'));
   if(u) u.c='CleanToBeInspected';
   render();
@@ -1286,6 +1317,10 @@ async function ev_inspect(k){
   if(hadAssignment){
     const r=await pushAssignment('clear',k);
     if(!r.ok) showToast(t('err_assignment_not_saved',{msg:r.msg||t('unknown_error')}),'err');
+  }
+  if(hadGuestClean){
+    const r=await pushGuestCleanClear(k);
+    if(!r.ok) showToast(t('err_guestclean_not_cleared',{msg:r.msg||t('unknown_error')}),'err');
   }
 }
 
@@ -1322,7 +1357,7 @@ async function ev_completeInspection(k){
 
 async function init(){
   console.log('[MK Housekeeping] Version', APP_VERSION);
-  await Promise.all([loadUsers(), loadCompletions(), loadDoubleUps(), loadBreaks(), loadAssignments()]);
+  await Promise.all([loadUsers(), loadCompletions(), loadDoubleUps(), loadBreaks(), loadAssignments(), loadGuestClean()]);
   if(!S.loggedIn && getToken()){
     try{
       const r = await usersApiFetch({action:'whoami'});
