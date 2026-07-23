@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>Zimmerreinigung anfordern</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F6F5F2;color:#1A1A1A;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .card{background:#fff;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,.08);max-width:420px;width:100%;padding:32px 28px;text-align:center;}
+  .room-badge{display:inline-block;background:#111;color:#fff;font-size:13px;letter-spacing:.05em;padding:6px 14px;border-radius:999px;margin-bottom:18px;}
+  h1{font-size:20px;margin:0 0 6px;}
+  .sub{font-size:14px;color:#666;margin:0 0 26px;}
+  .lang-block{margin-bottom:18px;}
+  .lang-block:last-of-type{margin-bottom:28px;}
+  .lang-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:4px;}
+  .lang-text{font-size:15px;line-height:1.4;}
+  button.req-btn{width:100%;border:none;border-radius:14px;padding:16px 18px;font-size:16px;font-weight:600;cursor:pointer;background:#A32D2D;color:#fff;transition:transform .1s;}
+  button.req-btn:active{transform:scale(.98);}
+  button.req-btn:disabled{background:#9BC7AE;cursor:default;}
+  .hint{font-size:12px;color:#999;margin-top:16px;line-height:1.5;}
+  .err{color:#A32D2D;font-size:13px;margin-top:14px;}
+  .spinner{width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:8px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .check{font-size:34px;margin-bottom:6px;}
+</style>
+</head>
+<body>
+  <div class="card" id="card">Lädt…</div>
+
+<script>
+const PROPERTY_NAMES = {
+  ARNS:'Gästehäuser Arnstorf', BER:'mk | hotel berlin', EBO:'mk | hotel eschborn', FRA:'mk | hotel frankfurt',
+  LON:'mk | hotel london', MUC_CTY:'mk | hotel münchen city', MUC_MWP:'mk | hotel münchen max-weber-platz',
+  REM:'mk | hotel remscheid', RUE:'mk | hotel rüsselsheim', SPHMK:'Schlossparkhotel Mariakirchen',
+  STGR:'mk | hotel stuttgart', TIA:'mk | hotel tirana', ZPF:'mk | hotel passau', TEST:'TEST MK Hotel',
+};
+
+function qs(name){ return new URLSearchParams(location.search).get(name) || ''; }
+
+async function submitRequest(prop, room, key){
+  const btn = document.getElementById('req-btn');
+  const errEl = document.getElementById('err');
+  if(errEl) errEl.textContent='';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Wird gesendet… / Sending…';
+  try{
+    const res = await fetch('/api/guestclean', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'request', prop, room, key }),
+    });
+    const j = await res.json().catch(()=>({}));
+    if(!res.ok || j.error) throw new Error(j.error || ('HTTP '+res.status));
+    document.getElementById('card').innerHTML = `
+      <div class="check">✅</div>
+      <h1>Danke!</h1>
+      <p class="sub">Housekeeping wurde informiert.<br>Housekeeping has been notified.</p>
+      <p class="hint">Ihr Zimmer wird schnellstmöglich gereinigt.<br>Your room will be cleaned as soon as possible.</p>`;
+  }catch(e){
+    btn.disabled = false;
+    btn.textContent = 'Nochmal versuchen / Try again';
+    if(errEl) errEl.textContent = 'Fehler: ' + e.message;
+  }
+}
+
+function render(){
+  const prop = qs('prop');
+  const room = qs('room');
+  const card = document.getElementById('card');
+  if(!prop || !room){
+    card.innerHTML = `<h1>Zimmer nicht erkannt</h1><p class="sub">Room not recognized.</p>
+      <p class="hint">Bitte wenden Sie sich an die Rezeption.<br>Please contact the front desk.</p>`;
+    return;
+  }
+  const key = prop + '_' + room;
+  const hotelName = PROPERTY_NAMES[prop] || prop;
+  card.innerHTML = `
+    <div class="room-badge">${hotelName} · Zimmer / Room ${room}</div>
+    <div class="lang-block">
+      <div class="lang-label">Deutsch</div>
+      <div class="lang-text"><strong>Wunschreinigung</strong> — möchten Sie, dass Ihr Zimmer heute gereinigt wird?</div>
+    </div>
+    <div class="lang-block">
+      <div class="lang-label">English</div>
+      <div class="lang-text"><strong>Cleaning request</strong> — would you like your room cleaned today?</div>
+    </div>
+    <button class="req-btn" id="req-btn" onclick="submitRequest('${prop}','${room.replace(/'/g,"\\'")}','${key.replace(/'/g,"\\'")}')">Tägliche Reinigung anfordern / Request daily cleaning</button>
+    <div class="err" id="err"></div>
+    <p class="hint">Die Reinigung erfolgt im Laufe des Tages.<br>Cleaning will take place later today.</p>`;
+}
+
+render();
+</script>
+</body>
+</html>
