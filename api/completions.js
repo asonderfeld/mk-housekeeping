@@ -34,7 +34,10 @@ module.exports = async (req, res) => {
       res.status(400).json({ error: 'entry (uid, prop, room, duration, ts) fehlt oder unvollständig.' }); return;
     }
 
+    // "type" ist optional: normale Reinigungsabschlüsse haben keinen Typ,
+    // DNDS-Meldungen (Gast wollte keine Störung) setzen type:'dnds' mit duration:0.
     const clean = { uid: entry.uid, prop: entry.prop, room: entry.room, duration: entry.duration, ts: entry.ts };
+    if (entry.type === 'dnds') clean.type = 'dnds';
     await r.rpush(KEY, JSON.stringify(clean));
     const completions = await getAll(r);
     res.status(200).json({ ok: true, completions });
