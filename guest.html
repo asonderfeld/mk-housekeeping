@@ -55,8 +55,7 @@ async function submitRequest(prop, room, key){
     document.getElementById('card').innerHTML = `
       <div class="check">✅</div>
       <h1>Danke!</h1>
-      <p class="sub">Housekeeping wurde informiert.<br>Housekeeping has been notified.</p>
-      <p class="hint">Ihr Zimmer wird schnellstmöglich gereinigt.<br>Your room will be cleaned as soon as possible.</p>`;
+      <p class="sub">Vielen Dank! Unser Housekeeping-Team hat Ihre Anfrage erhalten und kümmert sich zum nächstmöglichen Zeitpunkt um Ihr Zimmer.<br><br>Thank you! Our housekeeping team has received your request and will take care of your room at the next available opportunity.</p>`;
   }catch(e){
     btn.disabled = false;
     btn.textContent = 'Nochmal versuchen / Try again';
@@ -79,15 +78,15 @@ function render(){
     <div class="room-badge">${hotelName} · Zimmer / Room ${room}</div>
     <div class="lang-block">
       <div class="lang-label">Deutsch</div>
-      <div class="lang-text"><strong>Wunschreinigung</strong> — möchten Sie, dass Ihr Zimmer heute gereinigt wird?</div>
+      <div class="lang-text"><strong>Zimmerreinigung anfordern</strong><br>Möchten Sie eine Reinigung Ihres Zimmers anfragen?</div>
     </div>
     <div class="lang-block">
       <div class="lang-label">English</div>
-      <div class="lang-text"><strong>Cleaning request</strong> — would you like your room cleaned today?</div>
+      <div class="lang-text"><strong>Request room cleaning</strong><br>Would you like to request cleaning for your room?</div>
     </div>
-    <button class="req-btn" id="req-btn" onclick="submitRequest('${prop}','${room.replace(/'/g,"\\'")}','${key.replace(/'/g,"\\'")}')">Tägliche Reinigung anfordern / Request daily cleaning</button>
+    <button class="req-btn" id="req-btn" onclick="submitRequest('${prop}','${room.replace(/'/g,"\\'")}','${key.replace(/'/g,"\\'")}')">Reinigung anfordern / Request cleaning</button>
     <div class="err" id="err"></div>
-    <p class="hint">Die Reinigung erfolgt im Laufe des Tages.<br>Cleaning will take place later today.</p>`;
+    <p class="hint">Der Reinigungszeitpunkt richtet sich nach der aktuellen Verfügbarkeit unseres Housekeeping-Teams.<br><br>The cleaning time depends on the current availability of our housekeeping team.</p>`;
 }
 
 render();
