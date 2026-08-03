@@ -216,7 +216,7 @@ function pickColor(seed){ let h=0; for(const c of String(seed)) h=(h*31+c.charCo
 
 // ===== i18n =====
 const LANG_KEY = 'mkhk_lang';
-const LANGS = [ {code:'de',label:'DE'}, {code:'en',label:'EN'}, {code:'sq',label:'SQ'}, {code:'uk',label:'UA'} ];
+const LANGS = [ {code:'de',label:'DE'}, {code:'en',label:'EN'}, {code:'sq',label:'SQ'}, {code:'uk',label:'UA'}, {code:'tr',label:'TR'}, {code:'sr',label:'SR'}, {code:'hr',label:'HR'} ];
 const I18N = {
   de:{
     login_sub:'Bitte anmelden', login_user_ph:'Benutzername', login_pass_ph:'Passwort', login_btn:'Anmelden',
@@ -461,6 +461,189 @@ const I18N = {
     err_break_not_saved:'Увага: перерву НЕ збережено остаточно — {msg}',
     err_assignment_not_saved:'Увага: призначення НЕ збережено остаточно — {msg}',
     unknown_error:'Невідома помилка', retry_btn:'Спробувати ще раз',
+  },
+  tr:{
+    login_sub:'Lütfen giriş yapın', login_user_ph:'Kullanıcı adı', login_pass_ph:'Şifre', login_btn:'Giriş yap',
+    login_err:'Kullanıcı adı veya şifre hatalı.',
+    role_admin:'Yönetici', role_hk:'Kat Görevlisi', logout_btn:'Çıkış yap',
+    tab_rooms:'Odalar', tab_stats:'İstatistik', tab_doubleups:'Ek Hazırlık', tab_rules:'Kurallar', tab_team:'Ekip', tab_users:'Kullanıcılar',
+    loading_rooms:'Odalar yükleniyor…', loading_apaleo:'Apaleo\'ya bağlanılıyor…', loading_start:'Başlatılıyor…',
+    break_active:'Mola devam ediyor', break_idle:'Şu anda mola yok', break_end:'⏹ Molayı bitir', break_start:'☕ Molaya başla',
+    du_need_label:'Odaya ek hazırlık gerekiyor', no_hk_configured:'Tanımlı kat görevlisi yok.',
+    ready_for_inspection:'Süpervizör kontrolüne hazır', complete_inspection_btn:'✓ Kontrolü tamamla → Temiz',
+    clean_but_needs_doubleup:'Oda temizlendi ama hâlâ ek hazırlık gerekiyor',
+    assigned_label:'✓ Atandı', assign_btn:'Ata', room_word:'Oda',
+    multi_select_enter:'Birden çok seç', multi_select_exit:'Bitti',
+    multi_selected_count:'{n} oda seçildi', multi_select_hint:'Seçmek için odalara dokunun.',
+    multi_assign_done:'{n} oda atandı.',
+    clear_all_assignments_btn:'Tüm atamaları temizle', confirm_clear_assignments:'Bu tesisteki {n} atamanın tümü gerçekten silinsin mi?',
+    clear_assignments_done:'{n} atama temizlendi.', no_assignments_to_clear:'Bu tesiste atama yok.',
+    zr_due:'Zorunlu temizlik gerekiyor', zr_due_guest:'Misafir talepli temizlik', guest_request_title:'Misafir temizlik talep etti', legend_guest_request:'Misafir talebi', regular_clean:'Standart temizlik', cleaning_running:'Temizlik süresi işliyor',
+    reservation_comment:'📋 Rezervasyon notu', complete_cleaning_btn:'Temizliği tamamla → Kontrol', start_cleaning_btn:'▶ Temizliğe başla',
+    dnds_btn:'DNDS', dnds_already_today:'Bugün zaten DNDS olarak kaydedildi — misafir rahatsız edilmek istemedi.', dnds_badge_title:'Rahatsız etmeyin (DNDS)', legend_dnds:'DNDS', dnds_label:'DNDS',
+    scope_mine:'Sadece odalarım', scope_all:'Tüm odalar',
+    stat_zr_due:'Zorunlu gerekli', stat_dirty:'Kirli', stat_inspect:'Kontrol', stat_clean:'Temiz',
+    filter_all:'Tümü', filter_zr:'Zorunlu',
+    sub_running:'çalışıyor…', sub_stay:'Konaklama', sub_check:'Kontrol', sub_blocked:'Bloke', legend_departure:'Çıkış', legend_active:'Aktif',
+    du_equipment_label:'Ekipman',
+    du_type_babycot:'Bebek yatağı', du_type_sofabed:'Çekyat', du_type_dog:'Köpek', du_type_extras:'Ekstralar',
+    du_abbr_babycot:'Bebek', du_abbr_sofabed:'Çekyat', du_abbr_dog:'Köpek', du_abbr_extras:'Ekstra',
+    period_today:'Bugün', period_month:'Bu ay', period_ytd:'Yıl başından beri',
+    stat_room_count:'Oda sayısı', stat_avg_time:'Ort. temizlik süresi', stat_fastest:'En hızlı',
+    performance_title:'Performans {period}', rooms_word:'oda', breaks_label:'mola', break_word:'Mola',
+    no_entries:'{period} için kayıt yok.', last_completions:'Son tamamlananlar', no_cleanings_yet:'{period} için henüz temizlik yok.',
+    log_room_prefix:'Oda',
+    no_doubleup_rooms:'Şu anda ek hazırlık gereken oda yok.',
+    doubled_rooms_title:'Ek hazırlık gereken odalar ({n})', no_type_chosen:'tür seçilmedi',
+    rules_title:'Otomasyon kuralları',
+    rule1_name:'Zorunlu temizlik — 2 gece tetikleyici', rule1_desc:'Konaklama ≥2 gece, çift sayı → zorunlu temizlik (kırmızı)',
+    rule2_name:'Çıkış sonrası aynı gün temizlik', rule2_desc:'Bugün çıkışı olan oda → check-out sonrası otomatik olarak Kirli',
+    rule3_name:'Kontrol hatırlatması', rule3_desc:'2 saatten uzun süre kontrol beklerse → süpervizöre bildirim',
+    rule_active:'Aktif',
+    admins_title:'Yöneticiler', full_access:'Tam yetki', housekeepers_title:'Kat Görevlileri',
+    today_done:'bugün tamamlandı', assigned_count:'atandı',
+    new_user_title:'Yeni kullanıcı', edit_user_title:'Kullanıcıyı düzenle',
+    field_username:'Kullanıcı adı (giriş)', field_name:'Ad', field_password:'Şifre',
+    field_password_edit_hint:'Şifre (değiştirmemek için boş bırakın)', field_role:'Rol', field_props:'Tesis / tesisler',
+    all_houses:'Tüm tesisler', field_language:'Dil',
+    create_user_btn:'Kullanıcı oluştur', creating_user:'Oluşturuluyor…', save_user_btn:'Kaydet', saving_user:'Kaydediliyor…',
+    new_user_btn:'+ Yeni kullanıcı', cancel_btn:'Vazgeç', edit_btn:'Düzenle', delete_btn:'Sil',
+    cant_delete_self:'Kendinizi silemezsiniz',
+    user_created:'"{name}" kullanıcısı oluşturuldu.', user_updated:'"{name}" kullanıcısı güncellendi.', user_deleted:'Kullanıcı silindi.',
+    delete_error:'Silme hatası: {msg}', confirm_delete:'"{id}" kullanıcısı gerçekten silinsin mi?',
+    err_fill_fields:'Lütfen kullanıcı adı, ad ve şifreyi doldurun.', err_fill_fields_edit:'Lütfen adı doldurun.',
+    err_pick_house:'Lütfen en az bir tesis seçin.', err_username_exists:'Bu kullanıcı adı zaten mevcut.',
+    err_generic:'Hata: {msg}',
+    err_doubleup_not_saved:'Uyarı: ek hazırlık durumu KAYDEDİLMEDİ — {msg}',
+    err_doubleup_not_reset:'Uyarı: ek hazırlık durumu SIFIRLANMADI — {msg}',
+    err_guestclean_not_cleared:'Uyarı: misafir temizlik talebi TEMİZLENMEDİ — {msg}',
+    err_condition_not_synced:'Uyarı: durum Apaleo\'ya AKTARILMADI — {msg}',
+    err_completion_not_saved:'Uyarı: temizlik süresi KALICI OLARAK KAYDEDİLMEDİ — {msg}',
+    err_break_not_saved:'Uyarı: mola KALICI OLARAK KAYDEDİLMEDİ — {msg}',
+    err_assignment_not_saved:'Uyarı: atama KALICI OLARAK KAYDEDİLMEDİ — {msg}',
+    unknown_error:'Bilinmeyen hata', retry_btn:'Tekrar dene',
+  },
+  hr:{
+    login_sub:'Molimo prijavite se', login_user_ph:'Korisničko ime', login_pass_ph:'Lozinka', login_btn:'Prijava',
+    login_err:'Neispravno korisničko ime ili lozinka.',
+    role_admin:'Administrator', role_hk:'Sobarica', logout_btn:'Odjava',
+    tab_rooms:'Sobe', tab_stats:'Statistika', tab_doubleups:'Dodatna opskrba', tab_rules:'Pravila', tab_team:'Tim', tab_users:'Korisnici',
+    loading_rooms:'Učitavanje soba…', loading_apaleo:'Povezivanje s Apaleom…', loading_start:'Pokretanje…',
+    break_active:'Pauza u tijeku', break_idle:'Trenutno nema pauze', break_end:'⏹ Završi pauzu', break_start:'☕ Započni pauzu',
+    du_need_label:'Soba treba dodatnu opskrbu', no_hk_configured:'Nema konfiguriranih sobarica.',
+    ready_for_inspection:'Spremno za kontrolu voditeljice', complete_inspection_btn:'✓ Završi kontrolu → Čisto',
+    clean_but_needs_doubleup:'Soba je već očišćena, ali treba dodatnu opskrbu',
+    assigned_label:'✓ Dodijeljeno', assign_btn:'Dodijeli', room_word:'Soba',
+    multi_select_enter:'Višestruki odabir', multi_select_exit:'Gotovo',
+    multi_selected_count:'Odabrano {n} soba', multi_select_hint:'Dodirnite sobe da ih odaberete.',
+    multi_assign_done:'{n} soba dodijeljeno.',
+    clear_all_assignments_btn:'Ukloni sve dodjele', confirm_clear_assignments:'Stvarno ukloniti svih {n} dodjela u ovom objektu?',
+    clear_assignments_done:'{n} dodjela uklonjeno.', no_assignments_to_clear:'Nema dodjela u ovom objektu.',
+    zr_due:'Obavezno čišćenje dospjelo', zr_due_guest:'Čišćenje na zahtjev gosta', guest_request_title:'Gost je zatražio čišćenje', legend_guest_request:'Zahtjev gosta', regular_clean:'Redovno čišćenje', cleaning_running:'Vrijeme čišćenja u tijeku',
+    reservation_comment:'📋 Napomena rezervacije', complete_cleaning_btn:'Završi čišćenje → Kontrola', start_cleaning_btn:'▶ Započni čišćenje',
+    dnds_btn:'DNDS', dnds_already_today:'Danas je već zabilježeno kao DNDS — gost nije htio da ga se uznemirava.', dnds_badge_title:'Ne uznemiravaj (DNDS)', legend_dnds:'DNDS', dnds_label:'DNDS',
+    scope_mine:'Samo moje sobe', scope_all:'Sve sobe',
+    stat_zr_due:'Obavezno dospjelo', stat_dirty:'Prljavo', stat_inspect:'Kontrola', stat_clean:'Čisto',
+    filter_all:'Sve', filter_zr:'Obavezno',
+    sub_running:'u tijeku…', sub_stay:'Boravak', sub_check:'Provjera', sub_blocked:'Blokirano', legend_departure:'Odlazak', legend_active:'Aktivno',
+    du_equipment_label:'Opskrba',
+    du_type_babycot:'Krevetić za bebu', du_type_sofabed:'Kauč na razvlačenje', du_type_dog:'Pas', du_type_extras:'Ekstra',
+    du_abbr_babycot:'Beba', du_abbr_sofabed:'Kauč', du_abbr_dog:'Pas', du_abbr_extras:'Ekstra',
+    period_today:'Danas', period_month:'Ovaj mjesec', period_ytd:'Od početka godine',
+    stat_room_count:'Broj soba', stat_avg_time:'Prosj. vrijeme čišćenja', stat_fastest:'Najbrže',
+    performance_title:'Učinak {period}', rooms_word:'soba', breaks_label:'pauze', break_word:'Pauza',
+    no_entries:'Nema unosa {period}.', last_completions:'Nedavno završeno', no_cleanings_yet:'Još nema čišćenja {period}.',
+    log_room_prefix:'Sob.',
+    no_doubleup_rooms:'Trenutno nijedna soba nije označena kao da treba dodatnu opskrbu.',
+    doubled_rooms_title:'Sobe s dodatnom opskrbom ({n})', no_type_chosen:'nije odabrana vrsta',
+    rules_title:'Pravila automatizacije',
+    rule1_name:'Obavezno čišćenje — okidač na 2 noći', rule1_desc:'Boravak ≥2 noći, parni broj → obavezno čišćenje (crveno)',
+    rule2_name:'Čišćenje istog dana nakon odjave', rule2_desc:'Soba s odlaskom danas → automatski Prljavo nakon odjave',
+    rule3_name:'Podsjetnik za kontrolu', rule3_desc:'Čeka kontrolu duže od 2h → obavijest voditeljici',
+    rule_active:'Aktivno',
+    admins_title:'Administratori', full_access:'Potpuni pristup', housekeepers_title:'Sobarice',
+    today_done:'danas završeno', assigned_count:'dodijeljeno',
+    new_user_title:'Novi korisnik', edit_user_title:'Uredi korisnika',
+    field_username:'Korisničko ime (prijava)', field_name:'Ime', field_password:'Lozinka',
+    field_password_edit_hint:'Lozinka (ostavite prazno = nepromijenjeno)', field_role:'Uloga', field_props:'Objekt / objekti',
+    all_houses:'Svi objekti', field_language:'Jezik',
+    create_user_btn:'Kreiraj korisnika', creating_user:'Kreiranje…', save_user_btn:'Spremi', saving_user:'Spremanje…',
+    new_user_btn:'+ Novi korisnik', cancel_btn:'Odustani', edit_btn:'Uredi', delete_btn:'Izbriši',
+    cant_delete_self:'Ne možete izbrisati sami sebe',
+    user_created:'Korisnik "{name}" je kreiran.', user_updated:'Korisnik "{name}" je ažuriran.', user_deleted:'Korisnik izbrisan.',
+    delete_error:'Greška pri brisanju: {msg}', confirm_delete:'Stvarno izbrisati korisnika "{id}"?',
+    err_fill_fields:'Molimo unesite korisničko ime, ime i lozinku.', err_fill_fields_edit:'Molimo unesite ime.',
+    err_pick_house:'Molimo odaberite najmanje jedan objekt.', err_username_exists:'Ovo korisničko ime već postoji.',
+    err_generic:'Greška: {msg}',
+    err_doubleup_not_saved:'Upozorenje: status dodatne opskrbe NIJE spremljen — {msg}',
+    err_doubleup_not_reset:'Upozorenje: status dodatne opskrbe NIJE resetiran — {msg}',
+    err_guestclean_not_cleared:'Upozorenje: zahtjev gosta za čišćenje NIJE uklonjen — {msg}',
+    err_condition_not_synced:'Upozorenje: status NIJE sinkroniziran s Apaleom — {msg}',
+    err_completion_not_saved:'Upozorenje: vrijeme čišćenja NIJE trajno spremljeno — {msg}',
+    err_break_not_saved:'Upozorenje: pauza NIJE trajno spremljena — {msg}',
+    err_assignment_not_saved:'Upozorenje: dodjela NIJE trajno spremljena — {msg}',
+    unknown_error:'Nepoznata greška', retry_btn:'Pokušaj ponovno',
+  },
+  sr:{
+    login_sub:'Molimo prijavite se', login_user_ph:'Korisničko ime', login_pass_ph:'Lozinka', login_btn:'Prijava',
+    login_err:'Neispravno korisničko ime ili lozinka.',
+    role_admin:'Administrator', role_hk:'Sobarica', logout_btn:'Odjava',
+    tab_rooms:'Sobe', tab_stats:'Statistika', tab_doubleups:'Dodatna opskrba', tab_rules:'Pravila', tab_team:'Tim', tab_users:'Korisnici',
+    loading_rooms:'Učitavanje soba…', loading_apaleo:'Povezivanje sa Apaleom…', loading_start:'Pokretanje…',
+    break_active:'Pauza u toku', break_idle:'Trenutno nema pauze', break_end:'⏹ Završi pauzu', break_start:'☕ Započni pauzu',
+    du_need_label:'Sobi je potrebna dodatna opskrba', no_hk_configured:'Nema konfigurisanih sobarica.',
+    ready_for_inspection:'Spremno za kontrolu vođe smene', complete_inspection_btn:'✓ Završi kontrolu → Čisto',
+    clean_but_needs_doubleup:'Soba je već očišćena, ali joj je potrebna dodatna opskrba',
+    assigned_label:'✓ Dodeljeno', assign_btn:'Dodeli', room_word:'Soba',
+    multi_select_enter:'Višestruki izbor', multi_select_exit:'Gotovo',
+    multi_selected_count:'Izabrano {n} soba', multi_select_hint:'Dodirnite sobe da ih izaberete.',
+    multi_assign_done:'{n} soba dodeljeno.',
+    clear_all_assignments_btn:'Ukloni sve dodele', confirm_clear_assignments:'Stvarno ukloniti svih {n} dodela u ovom objektu?',
+    clear_assignments_done:'{n} dodela uklonjeno.', no_assignments_to_clear:'Nema dodela u ovom objektu.',
+    zr_due:'Obavezno čišćenje dospelo', zr_due_guest:'Čišćenje na zahtev gosta', guest_request_title:'Gost je zatražio čišćenje', legend_guest_request:'Zahtev gosta', regular_clean:'Redovno čišćenje', cleaning_running:'Vreme čišćenja u toku',
+    reservation_comment:'📋 Napomena rezervacije', complete_cleaning_btn:'Završi čišćenje → Kontrola', start_cleaning_btn:'▶ Započni čišćenje',
+    dnds_btn:'DNDS', dnds_already_today:'Danas je već zabeleženo kao DNDS — gost nije želeo da bude uznemiravan.', dnds_badge_title:'Ne uznemiravaj (DNDS)', legend_dnds:'DNDS', dnds_label:'DNDS',
+    scope_mine:'Samo moje sobe', scope_all:'Sve sobe',
+    stat_zr_due:'Obavezno dospelo', stat_dirty:'Prljavo', stat_inspect:'Kontrola', stat_clean:'Čisto',
+    filter_all:'Sve', filter_zr:'Obavezno',
+    sub_running:'u toku…', sub_stay:'Boravak', sub_check:'Provera', sub_blocked:'Blokirano', legend_departure:'Odlazak', legend_active:'Aktivno',
+    du_equipment_label:'Opskrba',
+    du_type_babycot:'Krevetac za bebu', du_type_sofabed:'Kauč na razvlačenje', du_type_dog:'Pas', du_type_extras:'Ekstra',
+    du_abbr_babycot:'Beba', du_abbr_sofabed:'Kauč', du_abbr_dog:'Pas', du_abbr_extras:'Ekstra',
+    period_today:'Danas', period_month:'Ovaj mesec', period_ytd:'Od početka godine',
+    stat_room_count:'Broj soba', stat_avg_time:'Prosečno vreme čišćenja', stat_fastest:'Najbrže',
+    performance_title:'Učinak {period}', rooms_word:'soba', breaks_label:'pauze', break_word:'Pauza',
+    no_entries:'Nema unosa {period}.', last_completions:'Nedavno završeno', no_cleanings_yet:'Još nema čišćenja {period}.',
+    log_room_prefix:'Sob.',
+    no_doubleup_rooms:'Trenutno nijedna soba nije obeležena kao da joj je potrebna dodatna opskrba.',
+    doubled_rooms_title:'Sobe sa dodatnom opskrbom ({n})', no_type_chosen:'nije izabrana vrsta',
+    rules_title:'Pravila automatizacije',
+    rule1_name:'Obavezno čišćenje — okidač na 2 noći', rule1_desc:'Boravak ≥2 noći, paran broj → obavezno čišćenje (crveno)',
+    rule2_name:'Čišćenje istog dana nakon odjave', rule2_desc:'Soba sa odlaskom danas → automatski Prljavo nakon odjave',
+    rule3_name:'Podsetnik za kontrolu', rule3_desc:'Čeka kontrolu duže od 2h → obaveštenje vođi smene',
+    rule_active:'Aktivno',
+    admins_title:'Administratori', full_access:'Potpuni pristup', housekeepers_title:'Sobarice',
+    today_done:'danas završeno', assigned_count:'dodeljeno',
+    new_user_title:'Novi korisnik', edit_user_title:'Izmeni korisnika',
+    field_username:'Korisničko ime (prijava)', field_name:'Ime', field_password:'Lozinka',
+    field_password_edit_hint:'Lozinka (ostavite prazno = nepromenjeno)', field_role:'Uloga', field_props:'Objekat / objekti',
+    all_houses:'Svi objekti', field_language:'Jezik',
+    create_user_btn:'Kreiraj korisnika', creating_user:'Kreiranje…', save_user_btn:'Sačuvaj', saving_user:'Čuvanje…',
+    new_user_btn:'+ Novi korisnik', cancel_btn:'Otkaži', edit_btn:'Izmeni', delete_btn:'Obriši',
+    cant_delete_self:'Ne možete obrisati sami sebe',
+    user_created:'Korisnik "{name}" je kreiran.', user_updated:'Korisnik "{name}" je ažuriran.', user_deleted:'Korisnik obrisan.',
+    delete_error:'Greška pri brisanju: {msg}', confirm_delete:'Stvarno obrisati korisnika "{id}"?',
+    err_fill_fields:'Molimo unesite korisničko ime, ime i lozinku.', err_fill_fields_edit:'Molimo unesite ime.',
+    err_pick_house:'Molimo izaberite najmanje jedan objekat.', err_username_exists:'Ovo korisničko ime već postoji.',
+    err_generic:'Greška: {msg}',
+    err_doubleup_not_saved:'Upozorenje: status dodatne opskrbe NIJE sačuvan — {msg}',
+    err_doubleup_not_reset:'Upozorenje: status dodatne opskrbe NIJE resetovan — {msg}',
+    err_guestclean_not_cleared:'Upozorenje: zahtev gosta za čišćenje NIJE uklonjen — {msg}',
+    err_condition_not_synced:'Upozorenje: status NIJE sinhronizovan sa Apaleom — {msg}',
+    err_completion_not_saved:'Upozorenje: vreme čišćenja NIJE trajno sačuvano — {msg}',
+    err_break_not_saved:'Upozorenje: pauza NIJE trajno sačuvana — {msg}',
+    err_assignment_not_saved:'Upozorenje: dodela NIJE trajno sačuvana — {msg}',
+    unknown_error:'Nepoznata greška', retry_btn:'Pokušaj ponovo',
   },
 };
 function t(key, vars){
@@ -771,6 +954,9 @@ function getStats(p) {
   return{dirty,zr,insp,clean};
 }
 function getHKs(p){ return USERS.filter(u=>u.role==='housekeeper'&&(u.props.includes(p)||u.props.includes('alle'))); }
+// Analog zu getHKs, aber für Admins — damit Statistik/Team/Benutzer auf den
+// oben gewählten Standort (S.prop) reagieren, statt immer alle Nutzer zu zeigen.
+function getAdmins(p){ return USERS.filter(u=>u.role==='admin'&&(u.props.includes(p)||u.props.includes('alle'))); }
 function getWL(uid,p){ return Object.entries(S.assignments).filter(([k,v])=>v===uid&&k.startsWith(p+'_')).length; }
 function stopTimerIv(){ if(timerIv){clearInterval(timerIv);timerIv=null;} }
 function maybeTimerIv(){
@@ -979,7 +1165,9 @@ function scrStats(){
   const period=S.statsPeriod||'today';
   const PERIODS=STATS_PERIODS();
   const from=statsFrom(period);
-  const all=S.completedTimes.filter(tm=>tm.ts>=from);
+  // Nach dem oben gewählten Standort (S.prop) filtern — vorher ignorierte die
+  // Statistik den Haus-Filter komplett und zeigte immer alle Häuser gemischt.
+  const all=S.completedTimes.filter(tm=>tm.ts>=from&&tm.prop===S.prop);
   // DNDS-Meldungen sind keine abgeschlossenen Reinigungen (duration:0) und dürfen
   // die Kennzahlen (Ø Zeit, Schnellste, Zimmeranzahl) nicht verfälschen — sie
   // fließen nur in die "Letzte Abschlüsse"-Liste und das Personen-Log ein.
@@ -987,7 +1175,7 @@ function scrStats(){
   const allBreaks=S.breakLog.filter(b=>b.start>=from);
   const tot=cleaned.length,avg=tot?Math.round(cleaned.reduce((s,tm)=>s+tm.duration,0)/tot):0;
   const fast=tot?Math.min(...cleaned.map(tm=>tm.duration)):0;
-  const hks=visibleHKs();
+  const hks=getHKs(S.prop);
   const maxA=Math.max(1,...hks.map(h=>{const ht=cleaned.filter(tm=>tm.uid===h.id);return ht.length?Math.round(ht.reduce((s,tm)=>s+tm.duration,0)/ht.length):0;}));
   return `<div class="filter-row">${Object.entries(PERIODS).map(([k,l])=>`<button class="fbtn${period===k?' act':''}" onclick="ev_statsPeriod('${k}')">${l}</button>`).join('')}</div>
   <div class="stat-row">
@@ -1008,7 +1196,7 @@ function scrStats(){
   </div>${a?`<div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${h.bg};"></div></div>`:''}
   <div style="font-size:11px;color:#888;margin-top:6px;">☕ ${hb.length} ${t('breaks_label')}${bTotal?' · '+fmtDurL(bTotal):''}</div>
   ${open?`<div class="hk-log-list">${timeline.length?timeline.map(e=>e.type==='clean'?`<div class="hk-log-row">
-      <span class="hk-log-room">${t('log_room_prefix')} ${e.t.room} · ${e.t.prop}</span>
+      <span class="hk-log-room">${t('log_room_prefix')} ${e.t.room} · ${e.t.prop}${e.t.kind?` · ${e.t.kind==='departure'?t('legend_departure'):t('sub_stay')}`:''}</span>
       <span class="hk-log-time">${fmtDate(e.t.ts)} · ${fmtTime(e.t.ts-e.t.duration*1000)} – ${fmtTime(e.t.ts)}</span>
       <span class="hk-log-dur">${fmtDurL(e.t.duration)}</span>
     </div>`:e.type==='dnds'?`<div class="hk-log-row">
@@ -1023,7 +1211,7 @@ function scrStats(){
   </div>`;}).join('')}
   ${all.length?`<div class="sec-title" style="margin-top:12px;">${t('last_completions')}</div>
   <div class="stat-card">${all.slice(-8).reverse().map(tm=>{const u=USERS.find(x=>x.id===tm.uid);const isDnds=tm.type==='dnds';
-  return`<div class="log-row"><div style="display:flex;align-items:center;gap:7px;"><div class="avatar" style="width:24px;height:24px;font-size:9px;background:${u?u.bg:'#eee'};color:${u?u.tx:'#666'}">${tm.uid}</div><span style="font-size:12px;">${isDnds?'⛔ ':''}${t('log_room_prefix')} ${tm.room} · ${tm.prop}</span></div><div style="text-align:right;"><span style="font-size:12px;font-weight:600;${isDnds?'color:#8a6a1f;':''}">${isDnds?t('dnds_label'):fmtDurL(tm.duration)}</span><div style="font-size:10px;color:#888;">${fmtDate(tm.ts)}</div></div></div>`;}).join('')}</div>`
+  return`<div class="log-row"><div style="display:flex;align-items:center;gap:7px;"><div class="avatar" style="width:24px;height:24px;font-size:9px;background:${u?u.bg:'#eee'};color:${u?u.tx:'#666'}">${tm.uid}</div><span style="font-size:12px;">${isDnds?'⛔ ':''}${t('log_room_prefix')} ${tm.room} · ${tm.prop}${tm.kind?` · ${tm.kind==='departure'?t('legend_departure'):t('sub_stay')}`:''}</span></div><div style="text-align:right;"><span style="font-size:12px;font-weight:600;${isDnds?'color:#8a6a1f;':''}">${isDnds?t('dnds_label'):fmtDurL(tm.duration)}</span><div style="font-size:10px;color:#888;">${fmtDate(tm.ts)}</div></div></div>`;}).join('')}</div>`
   :`<p style="font-size:12px;color:#888;text-align:center;padding:20px 0;">${t('no_cleanings_yet',{period:PERIODS[period].toLowerCase()})}</p>`}`;
 }
 
@@ -1055,14 +1243,16 @@ function scrRules(){
 
 function scrTeam(){
   const today=new Date();today.setHours(0,0,0,0);
-  const tt=S.completedTimes.filter(tm=>tm.ts>=today.getTime()&&tm.type!=='dnds');
+  // Auf den oben gewählten Standort (S.prop) beschränken — betrifft sowohl die
+  // "heute fertig"-Zählung als auch die Admin-/Housekeeper-Listen darunter.
+  const tt=S.completedTimes.filter(tm=>tm.ts>=today.getTime()&&tm.type!=='dnds'&&tm.prop===S.prop);
   return`<div class="sec-title">${t('admins_title')}</div>
-  ${USERS.filter(u=>u.role==='admin').map(u=>`<div class="team-card"><div style="display:flex;align-items:center;gap:10px;">
+  ${getAdmins(S.prop).map(u=>`<div class="team-card"><div style="display:flex;align-items:center;gap:10px;">
     <div class="avatar" style="width:38px;height:38px;font-size:13px;background:${u.bg};color:${u.tx}">${u.id}</div>
     <div><div style="display:flex;align-items:center;gap:7px;"><span style="font-size:14px;font-weight:500;">${u.name}</span><span class="role-pill ra">${t('role_admin')}</span></div>
     <div style="font-size:11px;color:#888;margin-top:2px;">${t('full_access')}</div></div></div></div>`).join('')}
   <div class="sec-title" style="margin-top:14px;">${t('housekeepers_title')}</div>
-  ${visibleHKs().map(u=>`<div class="team-card"><div style="display:flex;align-items:center;gap:10px;">
+  ${getHKs(S.prop).map(u=>`<div class="team-card"><div style="display:flex;align-items:center;gap:10px;">
     <div class="avatar" style="width:38px;height:38px;font-size:13px;background:${u.bg};color:${u.tx}">${u.id}</div>
     <div style="flex:1;"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;"><span style="font-size:14px;font-weight:500;">${u.name}</span><span class="role-pill rh">${t('role_hk')}</span></div>
     <div style="font-size:11px;color:#888;margin-top:2px;">${u.props.join(', ')} · ${tt.filter(tm=>tm.uid===u.id).length} ${t('today_done')} · ${getWL(u.id,S.prop||'')} ${t('assigned_count')}</div></div></div></div>`).join('')}`;
@@ -1101,9 +1291,9 @@ function scrUsers(){
   return `${form}
   <button class="add-user-btn" onclick="ev_toggleUserForm()">${S.userFormOpen?t('cancel_btn'):t('new_user_btn')}</button>
   <div class="sec-title">${t('admins_title')}</div>
-  ${USERS.filter(u=>u.role==='admin').map(u=>userRow(u)).join('')}
+  ${getAdmins(S.prop).map(u=>userRow(u)).join('')}
   <div class="sec-title" style="margin-top:14px;">${t('housekeepers_title')}</div>
-  ${visibleHKs().map(u=>userRow(u)).join('')}`;
+  ${getHKs(S.prop).map(u=>userRow(u)).join('')}`;
 }
 
 function userRow(u){
@@ -1328,9 +1518,12 @@ async function ev_toggleBreak(){
   }
 }
 async function ev_inspect(k){
+  const u=(S.units[S.prop]||[]).find(x=>x.n===k.split('_').slice(1).join('_'));
   let entry=null;
   if(S.timers[k]){ const dur=Math.floor((Date.now()-S.timers[k].start)/1000),pts=k.split('_');
-    entry={uid:S.timers[k].uid,prop:pts[0],room:pts.slice(1).join('_'),duration:dur,ts:Date.now()};
+    // kind unterscheidet Bleibe-Reinigung (inkl. Zwangsreinigung, ZR) von
+    // Abreise-Reinigung — Grundlage ist u.dT (Zimmer hat heute eine Abreise).
+    entry={uid:S.timers[k].uid,prop:pts[0],room:pts.slice(1).join('_'),duration:dur,ts:Date.now(),kind:(u&&u.dT)?'departure':'stay'};
     S.completedTimes.push(entry); delete S.timers[k]; }
   S.conditions[k]='CleanToBeInspected'; S.selRoom=null;
   // Zuweisung an den Housekeeper wird nach erfolgreicher Reinigung entfernt —
@@ -1346,7 +1539,6 @@ async function ev_inspect(k){
   // Aufdoppeln, da die Anfrage pro Reinigungswunsch nur einmal gilt).
   const hadGuestClean=!!S.guestClean[k];
   if(hadGuestClean) delete S.guestClean[k];
-  const u=(S.units[S.prop]||[]).find(x=>x.n===k.split('_').slice(1).join('_'));
   if(u) u.c='CleanToBeInspected';
   render();
   if(u?.id){
