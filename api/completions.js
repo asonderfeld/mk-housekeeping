@@ -36,8 +36,11 @@ module.exports = async (req, res) => {
 
     // "type" ist optional: normale Reinigungsabschlüsse haben keinen Typ,
     // DNDS-Meldungen (Gast wollte keine Störung) setzen type:'dnds' mit duration:0.
+    // "kind" ist optional: 'stay' (Bleibe-Reinigung, inkl. Zwangsreinigung) oder
+    // 'departure' (Abreise-Reinigung) — nur bei echten Reinigungsabschlüssen gesetzt.
     const clean = { uid: entry.uid, prop: entry.prop, room: entry.room, duration: entry.duration, ts: entry.ts };
     if (entry.type === 'dnds') clean.type = 'dnds';
+    if (entry.kind === 'stay' || entry.kind === 'departure') clean.kind = entry.kind;
     await r.rpush(KEY, JSON.stringify(clean));
     const completions = await getAll(r);
     res.status(200).json({ ok: true, completions });
