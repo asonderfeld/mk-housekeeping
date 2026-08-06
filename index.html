@@ -176,7 +176,7 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 const API = '/api/apaleo';
 // Versions-ID: ab jetzt bei jeder inhaltlichen Änderung hochzählen (SemVer-artig:
 // MAJOR.MINOR.PATCH). Sichtbar im Header und auf dem Login-Screen für Support/Debugging.
-const APP_VERSION = '6.4.0';
+const APP_VERSION = '6.5.0';
 
 // Reservierungskommentare kommen vom Gast oder der OTA (Booking.com etc.) und
 // landen unverändert in u.cm. Vor jeder innerHTML-Ausgabe escapen, sonst kann
@@ -1403,9 +1403,14 @@ function ev_logout(){
 }
 async function ev_prop(p){
   if(S.prop===p) return; S.prop=p;S.selRoom=null;S.filter='all';
-  if(!S.units[p]){ S.loadingProp=true;render();
-    try{ S.units[p]=await fetchPropertyData(p); }catch(e){ S.units[p]=[]; }
-    S.loadingProp=false; }
+  // Beim Hauswechsel IMMER frisch von Apaleo laden statt den alten Stand aus
+  // dieser Sitzung wiederzuverwenden — sonst können Abreise/Belegung/Nächte
+  // veraltet sein, wenn seit dem letzten Besuch dieses Hauses z.B. ausgecheckt
+  // wurde (führte dazu, dass eine Abreise-Reinigung fälschlich als "Bleibe"
+  // geloggt wurde).
+  S.loadingProp=true; render();
+  try{ S.units[p]=await fetchPropertyData(p); }catch(e){ S.units[p]=S.units[p]||[]; }
+  S.loadingProp=false;
   render();
 }
 function ev_screen(s){ S.screen=s;S.selRoom=null;render(); }
@@ -1590,6 +1595,24 @@ async function ev_completeInspection(k){
   }
 }
 
+// Zimmer-/Reservierungsdaten (u.a. dT="Abreise heute") werden sonst nur einmal
+// pro Sitzung geladen und können veralten, wenn ein Gerät über Stunden oder
+// über Nacht offen bleibt — z.B. wurde eine Abreise-Reinigung fälschlich als
+// "Bleibe" geloggt, weil der Tab seit vor dem Check-out offen war. Deshalb hier
+// zusätzlich alle 10 Minuten sowie beim Wieder-Sichtbarwerden des Tabs (Gerät
+// aufgewacht) neu laden.
+let unitsRefreshIv=null;
+async function refreshCurrentUnits(){
+  if(!S.loggedIn||!S.prop) return;
+  try{ S.units[S.prop]=await fetchPropertyData(S.prop); render(); }
+  catch(e){ console.warn('[refreshCurrentUnits] Konnte Zimmerdaten nicht aktualisieren', e.message); }
+}
+function startUnitsAutoRefresh(){
+  if(unitsRefreshIv) return;
+  unitsRefreshIv=setInterval(refreshCurrentUnits, 10*60*1000);
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') refreshCurrentUnits(); });
+}
+
 async function init(){
   console.log('[MK Housekeeping] Version', APP_VERSION);
   await Promise.all([loadUsers(), loadCompletions(), loadDoubleUps(), loadBreaks(), loadAssignments(), loadGuestClean()]);
@@ -1614,6 +1637,7 @@ async function init(){
     S.loadingProp=true; render();
     S.units[S.prop]=await fetchPropertyData(S.prop);
     S.loadingProp=false; render();
+    startUnitsAutoRefresh();
   }catch(e){
     document.getElementById('app').innerHTML=`<div class="screen-center">
       <p style="font-size:22px">⚠️</p>
