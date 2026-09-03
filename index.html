@@ -69,7 +69,7 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 .du-badge-inline{font-size:10px;background:#59320f;color:#fff;padding:2px 7px;border-radius:7px;font-weight:500;}
 .du-check-row{display:flex;align-items:center;gap:8px;padding:8px 0 10px;border-bottom:.5px solid #f0efe9;margin-bottom:6px;}
 .du-check-row label{font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;}
-.du-type-row{display:flex;gap:8px;padding:0 0 10px;border-bottom:.5px solid #f0efe9;margin-bottom:6px;}
+.du-type-row{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 10px;border-bottom:.5px solid #f0efe9;margin-bottom:6px;}
 .du-type-btn{font-size:12px;padding:5px 12px;border-radius:7px;border:1px solid #ddd9cc;background:#fff;color:#444;cursor:pointer;}
 .du-type-btn.act{background:#59320f;color:#fff;border-color:#59320f;}
 .res-comment-box{background:#fff8e6;border:1px solid #f0dca0;border-radius:8px;padding:8px 10px;margin:10px 0;}
@@ -167,7 +167,33 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 .lang-switch{font-size:10px;padding:2px 6px;border-radius:8px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);outline:none;cursor:pointer;}
 .login-lang{margin-bottom:14px;}
 .login-lang select{font-size:12px;padding:4px 10px;border-radius:8px;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25);outline:none;cursor:pointer;}
+
+.refresh-btn{background:transparent;border:none;color:#fff;font-size:15px;cursor:pointer;padding:2px 6px;line-height:1;opacity:.85;}
+.refresh-btn:active{opacity:1;}
+.refresh-btn.spin{animation:hk-spin .7s linear;}
+@keyframes hk-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.month-select{font-size:11px;padding:5px 9px;border-radius:12px;border:.5px solid #ccc;background:#fff;color:#666;cursor:pointer;}
+.export-btn{background:#27500A;color:#fff;border-color:#27500A;}
+
+/* ===== Responsive: Smartphone (default) / Tablet / Laptop & Desktop ===== */
+@media (min-width:640px){
+  #app{max-width:720px;}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));}
+  .tile{min-height:68px;}
+}
+@media (min-width:1024px){
+  #app{max-width:1000px;}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;}
+  .tile{min-height:76px;}
+  .hdr h1{font-size:21px;}
+  .stat .n{font-size:25px;}
+}
+@media (min-width:1440px){
+  #app{max-width:1280px;}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
+}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <div id="app"><div class="screen-center"><div class="spinner"></div><p style="font-size:13px">Starte…</p></div></div>
@@ -176,7 +202,7 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 const API = '/api/apaleo';
 // Versions-ID: ab jetzt bei jeder inhaltlichen Änderung hochzählen (SemVer-artig:
 // MAJOR.MINOR.PATCH). Sichtbar im Header und auf dem Login-Screen für Support/Debugging.
-const APP_VERSION = '6.5.0';
+const APP_VERSION = '6.6.0';
 
 // Reservierungskommentare kommen vom Gast oder der OTA (Booking.com etc.) und
 // landen unverändert in u.cm. Vor jeder innerHTML-Ausgabe escapen, sonst kann
@@ -242,8 +268,9 @@ const I18N = {
     filter_all:'Alle', filter_zr:'ZR',
     sub_running:'läuft…', sub_stay:'Stay', sub_check:'Prüfen', sub_blocked:'Gesperrt', legend_departure:'Abreise', legend_active:'Aktiv',
     du_equipment_label:'Ausstattung',
-    du_type_babycot:'Babybett', du_type_sofabed:'Schlafsofa', du_type_dog:'Hund', du_type_extras:'Extras',
-    du_abbr_babycot:'Baby', du_abbr_sofabed:'Sofa', du_abbr_dog:'Hund', du_abbr_extras:'Extras',
+    du_type_babycot:'Babybett', du_type_sofabed:'Schlafsofa', du_type_dog:'Hund', du_type_extras:'Extras', du_type_dayuse:'Dayuse',
+    refresh_title:'Aktualisieren', refresh_toast:'App wird aktualisiert…', period_pick_month:'Monat wählen', export_excel_btn:'Excel Export',
+    du_abbr_babycot:'Baby', du_abbr_sofabed:'Sofa', du_abbr_dog:'Hund', du_abbr_extras:'Extras', du_abbr_dayuse:'Day',
     period_today:'Heute', period_month:'Im Monat', period_ytd:'YTD',
     stat_room_count:'Anzahl Zimmer', stat_avg_time:'Ø Reinigungszeit', stat_fastest:'Schnellste',
     performance_title:'Leistung {period}', rooms_word:'Zimmer', breaks_label:'Pausen', break_word:'Pause',
@@ -303,8 +330,9 @@ const I18N = {
     filter_all:'All', filter_zr:'Forced',
     sub_running:'running…', sub_stay:'Stay', sub_check:'Check', sub_blocked:'Blocked', legend_departure:'Departure', legend_active:'Active',
     du_equipment_label:'Setup',
-    du_type_babycot:'Baby cot', du_type_sofabed:'Sofa bed', du_type_dog:'Dog', du_type_extras:'Extras',
-    du_abbr_babycot:'Baby', du_abbr_sofabed:'Sofa', du_abbr_dog:'Dog', du_abbr_extras:'Extras',
+    du_type_babycot:'Baby cot', du_type_sofabed:'Sofa bed', du_type_dog:'Dog', du_type_extras:'Extras', du_type_dayuse:'Dayuse',
+    refresh_title:'Refresh', refresh_toast:'Refreshing app…', period_pick_month:'Pick month', export_excel_btn:'Excel export',
+    du_abbr_babycot:'Baby', du_abbr_sofabed:'Sofa', du_abbr_dog:'Dog', du_abbr_extras:'Extras', du_abbr_dayuse:'Day',
     period_today:'Today', period_month:'This month', period_ytd:'YTD',
     stat_room_count:'Number of rooms', stat_avg_time:'Avg. cleaning time', stat_fastest:'Fastest',
     performance_title:'Performance {period}', rooms_word:'rooms', breaks_label:'breaks', break_word:'Break',
@@ -364,8 +392,9 @@ const I18N = {
     filter_all:'Të gjitha', filter_zr:'Detyrim',
     sub_running:'në vazhdim…', sub_stay:'Qëndrim', sub_check:'Kontrollo', sub_blocked:'Bllokuar', legend_departure:'Nisje', legend_active:'Aktive',
     du_equipment_label:'Pajisje',
-    du_type_babycot:'Shtrat foshnje', du_type_sofabed:'Kanape-shtrat', du_type_dog:'Qen', du_type_extras:'Ekstra',
-    du_abbr_babycot:'Foshnjë', du_abbr_sofabed:'Kanape', du_abbr_dog:'Qen', du_abbr_extras:'Ekstra',
+    du_type_babycot:'Shtrat foshnje', du_type_sofabed:'Kanape-shtrat', du_type_dog:'Qen', du_type_extras:'Ekstra', du_type_dayuse:'Dayuse',
+    refresh_title:'Rifresko', refresh_toast:'Aplikacioni po rifreskohet…',
+    du_abbr_babycot:'Foshnjë', du_abbr_sofabed:'Kanape', du_abbr_dog:'Qen', du_abbr_extras:'Ekstra', du_abbr_dayuse:'Day',
     period_today:'Sot', period_month:'Këtë muaj', period_ytd:'Nga fillimi i vitit',
     stat_room_count:'Numri i dhomave', stat_avg_time:'Koha mesatare e pastrimit', stat_fastest:'Më e shpejta',
     performance_title:'Performanca {period}', rooms_word:'dhoma', breaks_label:'pushime', break_word:'Pushim',
@@ -425,8 +454,9 @@ const I18N = {
     filter_all:'Усі', filter_zr:'Примус',
     sub_running:'триває…', sub_stay:'Проживання', sub_check:'Перевірка', sub_blocked:'Блоковано', legend_departure:'Виїзд', legend_active:'Активно',
     du_equipment_label:'Облаштування',
-    du_type_babycot:'Дитяче ліжечко', du_type_sofabed:'Диван-ліжко', du_type_dog:'Собака', du_type_extras:'Додатково',
-    du_abbr_babycot:'Дитя', du_abbr_sofabed:'Диван', du_abbr_dog:'Пес', du_abbr_extras:'Дод.',
+    du_type_babycot:'Дитяче ліжечко', du_type_sofabed:'Диван-ліжко', du_type_dog:'Собака', du_type_extras:'Додатково', du_type_dayuse:'Dayuse',
+    refresh_title:'Оновити', refresh_toast:'Оновлення додатку…',
+    du_abbr_babycot:'Дитя', du_abbr_sofabed:'Диван', du_abbr_dog:'Пес', du_abbr_extras:'Дод.', du_abbr_dayuse:'Day',
     period_today:'Сьогодні', period_month:'За місяць', period_ytd:'З початку року',
     stat_room_count:'Кількість кімнат', stat_avg_time:'Сер. час прибирання', stat_fastest:'Найшвидше',
     performance_title:'Продуктивність {period}', rooms_word:'кімнат', breaks_label:'перерв', break_word:'Перерва',
@@ -486,8 +516,9 @@ const I18N = {
     filter_all:'Tümü', filter_zr:'Zorunlu',
     sub_running:'çalışıyor…', sub_stay:'Konaklama', sub_check:'Kontrol', sub_blocked:'Bloke', legend_departure:'Çıkış', legend_active:'Aktif',
     du_equipment_label:'Ekipman',
-    du_type_babycot:'Bebek yatağı', du_type_sofabed:'Çekyat', du_type_dog:'Köpek', du_type_extras:'Ekstralar',
-    du_abbr_babycot:'Bebek', du_abbr_sofabed:'Çekyat', du_abbr_dog:'Köpek', du_abbr_extras:'Ekstra',
+    du_type_babycot:'Bebek yatağı', du_type_sofabed:'Çekyat', du_type_dog:'Köpek', du_type_extras:'Ekstralar', du_type_dayuse:'Dayuse',
+    refresh_title:'Yenile', refresh_toast:'Uygulama yenileniyor…',
+    du_abbr_babycot:'Bebek', du_abbr_sofabed:'Çekyat', du_abbr_dog:'Köpek', du_abbr_extras:'Ekstra', du_abbr_dayuse:'Day',
     period_today:'Bugün', period_month:'Bu ay', period_ytd:'Yıl başından beri',
     stat_room_count:'Oda sayısı', stat_avg_time:'Ort. temizlik süresi', stat_fastest:'En hızlı',
     performance_title:'Performans {period}', rooms_word:'oda', breaks_label:'mola', break_word:'Mola',
@@ -547,8 +578,9 @@ const I18N = {
     filter_all:'Sve', filter_zr:'Obavezno',
     sub_running:'u tijeku…', sub_stay:'Boravak', sub_check:'Provjera', sub_blocked:'Blokirano', legend_departure:'Odlazak', legend_active:'Aktivno',
     du_equipment_label:'Opskrba',
-    du_type_babycot:'Krevetić za bebu', du_type_sofabed:'Kauč na razvlačenje', du_type_dog:'Pas', du_type_extras:'Ekstra',
-    du_abbr_babycot:'Beba', du_abbr_sofabed:'Kauč', du_abbr_dog:'Pas', du_abbr_extras:'Ekstra',
+    du_type_babycot:'Krevetić za bebu', du_type_sofabed:'Kauč na razvlačenje', du_type_dog:'Pas', du_type_extras:'Ekstra', du_type_dayuse:'Dayuse',
+    refresh_title:'Osveži', refresh_toast:'Aplikacija se osvežava…',
+    du_abbr_babycot:'Beba', du_abbr_sofabed:'Kauč', du_abbr_dog:'Pas', du_abbr_extras:'Ekstra', du_abbr_dayuse:'Day',
     period_today:'Danas', period_month:'Ovaj mjesec', period_ytd:'Od početka godine',
     stat_room_count:'Broj soba', stat_avg_time:'Prosj. vrijeme čišćenja', stat_fastest:'Najbrže',
     performance_title:'Učinak {period}', rooms_word:'soba', breaks_label:'pauze', break_word:'Pauza',
@@ -608,8 +640,9 @@ const I18N = {
     filter_all:'Sve', filter_zr:'Obavezno',
     sub_running:'u toku…', sub_stay:'Boravak', sub_check:'Provera', sub_blocked:'Blokirano', legend_departure:'Odlazak', legend_active:'Aktivno',
     du_equipment_label:'Opskrba',
-    du_type_babycot:'Krevetac za bebu', du_type_sofabed:'Kauč na razvlačenje', du_type_dog:'Pas', du_type_extras:'Ekstra',
-    du_abbr_babycot:'Beba', du_abbr_sofabed:'Kauč', du_abbr_dog:'Pas', du_abbr_extras:'Ekstra',
+    du_type_babycot:'Krevetac za bebu', du_type_sofabed:'Kauč na razvlačenje', du_type_dog:'Pas', du_type_extras:'Ekstra', du_type_dayuse:'Dayuse',
+    refresh_title:'Osvježi', refresh_toast:'Aplikacija se osvježava…',
+    du_abbr_babycot:'Beba', du_abbr_sofabed:'Kauč', du_abbr_dog:'Pas', du_abbr_extras:'Ekstra', du_abbr_dayuse:'Day',
     period_today:'Danas', period_month:'Ovaj mesec', period_ytd:'Od početka godine',
     stat_room_count:'Broj soba', stat_avg_time:'Prosečno vreme čišćenja', stat_fastest:'Najbrže',
     performance_title:'Učinak {period}', rooms_word:'soba', breaks_label:'pauze', break_word:'Pauza',
@@ -653,11 +686,11 @@ function t(key, vars){
   return str;
 }
 function duTypeLabel(type){
-  const map = {Babybett:'du_type_babycot', Schlafsofa:'du_type_sofabed', Hund:'du_type_dog', Extras:'du_type_extras'};
+  const map = {Babybett:'du_type_babycot', Schlafsofa:'du_type_sofabed', Hund:'du_type_dog', Extras:'du_type_extras', Dayuse:'du_type_dayuse'};
   return map[type] ? t(map[type]) : type;
 }
 function duTypeAbbr(type){
-  const map = {Babybett:'du_abbr_babycot', Schlafsofa:'du_abbr_sofabed', Hund:'du_abbr_dog', Extras:'du_abbr_extras'};
+  const map = {Babybett:'du_abbr_babycot', Schlafsofa:'du_abbr_sofabed', Hund:'du_abbr_dog', Extras:'du_abbr_extras', Dayuse:'du_abbr_dayuse'};
   return map[type] ? t(map[type]) : type;
 }
 function ev_setLang(code){
@@ -867,13 +900,13 @@ let S = {
   units:{}, screen:'rooms', filter:'all', hkScope:'mine',
   assignments:{}, conditions:{}, timers:{}, completedTimes:[], doubleUp:{}, doubleUpType:{}, doubleUpLocked:{}, guestClean:{},
   breakActive:{}, breakLog:[],
-  selRoom:null, loadingProp:false, rtog:{1:true,2:true,3:true}, toast:null, statsPeriod:'today', statsPerson:null,
+  selRoom:null, loadingProp:false, rtog:{1:true,2:true,3:true}, toast:null, statsPeriod:'today', statsMonth:null, statsPerson:null,
   multiSelect:false, multiSel:new Set(),
   userFormOpen:false, userFormErr:'', userBusy:false, editUserId:null,
   lang: (function(){ try{ return localStorage.getItem(LANG_KEY)||'de'; }catch(e){ return 'de'; } })(),
 };
-const DOUBLEUP_TYPES=['Babybett','Schlafsofa','Hund','Extras'];
-const DOUBLEUP_ABBR={Babybett:'Baby',Schlafsofa:'Sofa',Hund:'Hund',Extras:'Extras'};
+const DOUBLEUP_TYPES=['Babybett','Schlafsofa','Hund','Extras','Dayuse'];
+const DOUBLEUP_ABBR={Babybett:'Baby',Schlafsofa:'Sofa',Hund:'Hund',Extras:'Extras',Dayuse:'Day'};
 let timerIv = null;
 
 async function fetchProperties(allowedIds) {
@@ -997,6 +1030,7 @@ function buildApp(){
     <div class="hdr-right">
       <span class="user-chip">${S.currentUser.id} · ${S.currentUser.name.split(' ')[0]}</span>
       <span class="role-badge ${S.role==='admin'?'role-admin':'role-hk'}">${S.role==='admin'?t('role_admin'):t('role_hk')}</span>
+      <button class="refresh-btn" title="${t('refresh_title')}" onclick="ev_hardRefresh(this)">🔄</button>
       ${langSwitcher()}
       <button class="logout-btn" onclick="ev_logout()">${t('logout_btn')}</button>
     </div>
@@ -1155,35 +1189,62 @@ function scrRooms(){
 }
 
 function STATS_PERIODS(){ return {today:t('period_today'),month:t('period_month'),ytd:t('period_ytd')}; }
-function statsFrom(period){
+const STATS_LOCALE = {de:'de-DE',en:'en-US',sq:'sq-AL',uk:'uk-UA',tr:'tr-TR',sr:'sr-RS',hr:'hr-HR'};
+function monthOptions(n){
+  const arr=[]; const now=new Date(); const loc=STATS_LOCALE[S.lang]||'de-DE';
+  for(let i=0;i<(n||24);i++){
+    const d=new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const val=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    let label; try{ label=d.toLocaleDateString(loc,{month:'long',year:'numeric'}); }catch(e){ label=val; }
+    arr.push({val,label});
+  }
+  return arr;
+}
+function statsRange(period, monthVal){
   const now=new Date();
-  if(period==='today'){ const d=new Date();d.setHours(0,0,0,0); return d.getTime(); }
-  if(period==='month'){ return new Date(now.getFullYear(),now.getMonth(),1).getTime(); }
-  return new Date(now.getFullYear(),0,1).getTime();
+  if(period==='custom'&&monthVal){
+    const parts=monthVal.split('-').map(Number), y=parts[0], m=parts[1];
+    const from=new Date(y,m-1,1).getTime();
+    const to=Math.min(new Date(y,m,1).getTime()-1, Date.now());
+    return {from,to};
+  }
+  if(period==='today'){ const d=new Date();d.setHours(0,0,0,0); return {from:d.getTime(), to:Date.now()}; }
+  if(period==='month'){ return {from:new Date(now.getFullYear(),now.getMonth(),1).getTime(), to:Date.now()}; }
+  return {from:new Date(now.getFullYear(),0,1).getTime(), to:Date.now()};
 }
 function scrStats(){
   const period=S.statsPeriod||'today';
+  const monthVal=S.statsMonth;
   const PERIODS=STATS_PERIODS();
-  const from=statsFrom(period);
+  const {from,to}=statsRange(period,monthVal);
+  let periodLabel=PERIODS[period];
+  if(period==='custom'&&monthVal){ const mo=monthOptions(36).find(o=>o.val===monthVal); periodLabel=mo?mo.label:monthVal; }
   // Nach dem oben gewählten Standort (S.prop) filtern — vorher ignorierte die
   // Statistik den Haus-Filter komplett und zeigte immer alle Häuser gemischt.
-  const all=S.completedTimes.filter(tm=>tm.ts>=from&&tm.prop===S.prop);
+  const all=S.completedTimes.filter(tm=>tm.ts>=from&&tm.ts<=to&&tm.prop===S.prop);
   // DNDS-Meldungen sind keine abgeschlossenen Reinigungen (duration:0) und dürfen
   // die Kennzahlen (Ø Zeit, Schnellste, Zimmeranzahl) nicht verfälschen — sie
   // fließen nur in die "Letzte Abschlüsse"-Liste und das Personen-Log ein.
   const cleaned=all.filter(tm=>tm.type!=='dnds');
-  const allBreaks=S.breakLog.filter(b=>b.start>=from);
+  const allBreaks=S.breakLog.filter(b=>b.start>=from&&b.start<=to);
   const tot=cleaned.length,avg=tot?Math.round(cleaned.reduce((s,tm)=>s+tm.duration,0)/tot):0;
   const fast=tot?Math.min(...cleaned.map(tm=>tm.duration)):0;
   const hks=getHKs(S.prop);
   const maxA=Math.max(1,...hks.map(h=>{const ht=cleaned.filter(tm=>tm.uid===h.id);return ht.length?Math.round(ht.reduce((s,tm)=>s+tm.duration,0)/ht.length):0;}));
-  return `<div class="filter-row">${Object.entries(PERIODS).map(([k,l])=>`<button class="fbtn${period===k?' act':''}" onclick="ev_statsPeriod('${k}')">${l}</button>`).join('')}</div>
+  const moOpts=monthOptions();
+  return `<div class="filter-row">${Object.entries(PERIODS).map(([k,l])=>`<button class="fbtn${period===k?' act':''}" onclick="ev_statsPeriod('${k}')">${l}</button>`).join('')}
+  <select class="fbtn month-select" onchange="ev_statsMonth(this.value)">
+  <option value="">${t('period_pick_month')}</option>
+  ${moOpts.map(o=>`<option value="${o.val}"${period==='custom'&&monthVal===o.val?' selected':''}>${o.label}</option>`).join('')}
+  </select>
+  <button class="fbtn export-btn" onclick="ev_exportExcel()">📊 ${t('export_excel_btn')}</button>
+  </div>
   <div class="stat-row">
     <div class="stat"><div class="n">${tot}</div><div class="l">${t('stat_room_count')}</div></div>
     <div class="stat"><div class="n">${tot?fmtDur(avg):'—'}</div><div class="l">${t('stat_avg_time')}</div></div>
     <div class="stat"><div class="n">${fast?fmtDur(fast):'—'}</div><div class="l">${t('stat_fastest')}</div></div>
   </div>
-  <div class="sec-title">${t('performance_title',{period:PERIODS[period].toLowerCase()})}</div>
+  <div class="sec-title">${t('performance_title',{period:(periodLabel||'').toLowerCase()})}</div>
   ${hks.map(h=>{const ht=cleaned.filter(tm=>tm.uid===h.id),cnt=ht.length,a=cnt?Math.round(ht.reduce((s,tm)=>s+tm.duration,0)/cnt):0,pct=a?Math.round(a/maxA*100):0;
   const dt=all.filter(tm=>tm.uid===h.id&&tm.type==='dnds');
   const hb=allBreaks.filter(b=>b.uid===h.id),bTotal=hb.reduce((s,b)=>s+b.duration,0);
@@ -1207,12 +1268,12 @@ function scrStats(){
       <span class="hk-log-room">☕ ${t('break_word')}</span>
       <span class="hk-log-time">${fmtTime(e.b.start)} – ${fmtTime(e.b.end)}</span>
       <span class="hk-log-dur">${fmtDurL(e.b.duration)}</span>
-    </div>`).join(''):`<p style="font-size:12px;color:#888;text-align:center;padding:8px 0;">${t('no_entries',{period:PERIODS[period].toLowerCase()})}</p>`}</div>`:''}
+    </div>`).join(''):`<p style="font-size:12px;color:#888;text-align:center;padding:8px 0;">${t('no_entries',{period:(periodLabel||'').toLowerCase()})}</p>`}</div>`:''}
   </div>`;}).join('')}
   ${all.length?`<div class="sec-title" style="margin-top:12px;">${t('last_completions')}</div>
   <div class="stat-card">${all.slice(-8).reverse().map(tm=>{const u=USERS.find(x=>x.id===tm.uid);const isDnds=tm.type==='dnds';
   return`<div class="log-row"><div style="display:flex;align-items:center;gap:7px;"><div class="avatar" style="width:24px;height:24px;font-size:9px;background:${u?u.bg:'#eee'};color:${u?u.tx:'#666'}">${tm.uid}</div><span style="font-size:12px;">${isDnds?'⛔ ':''}${t('log_room_prefix')} ${tm.room} · ${tm.prop}${tm.kind?` · ${tm.kind==='departure'?t('legend_departure'):t('sub_stay')}`:''}</span></div><div style="text-align:right;"><span style="font-size:12px;font-weight:600;${isDnds?'color:#8a6a1f;':''}">${isDnds?t('dnds_label'):fmtDurL(tm.duration)}</span><div style="font-size:10px;color:#888;">${fmtDate(tm.ts)}</div></div></div>`;}).join('')}</div>`
-  :`<p style="font-size:12px;color:#888;text-align:center;padding:20px 0;">${t('no_cleanings_yet',{period:PERIODS[period].toLowerCase()})}</p>`}`;
+  :`<p style="font-size:12px;color:#888;text-align:center;padding:20px 0;">${t('no_cleanings_yet',{period:(periodLabel||'').toLowerCase()})}</p>`}`;
 }
 
 function scrDoubleUps(){
@@ -1416,8 +1477,43 @@ async function ev_prop(p){
 function ev_screen(s){ S.screen=s;S.selRoom=null;render(); }
 function ev_filter(f){ S.filter=f;render(); }
 function ev_hkScope(s){ S.hkScope=s; render(); }
-function ev_statsPeriod(p){ S.statsPeriod=p; document.getElementById('hkc').innerHTML=buildScreen(); }
+function ev_statsPeriod(p){ S.statsPeriod=p; S.statsMonth=null; document.getElementById('hkc').innerHTML=buildScreen(); }
+function ev_statsMonth(v){ if(v){ S.statsMonth=v; S.statsPeriod='custom'; } else { S.statsMonth=null; S.statsPeriod='today'; } document.getElementById('hkc').innerHTML=buildScreen(); }
 function ev_statsPerson(uid){ S.statsPerson=S.statsPerson===uid?null:uid; document.getElementById('hkc').innerHTML=buildScreen(); }
+
+function ev_exportExcel(){
+  if(typeof XLSX==='undefined'){ showToast('Excel-Bibliothek konnte nicht geladen werden — bitte Internetverbindung prüfen.','err'); return; }
+  const period=S.statsPeriod||'today', monthVal=S.statsMonth;
+  const {from,to}=statsRange(period,monthVal);
+  const all=S.completedTimes.filter(tm=>tm.ts>=from&&tm.ts<=to&&tm.prop===S.prop);
+  const cleaned=all.filter(tm=>tm.type!=='dnds');
+  const allBreaks=S.breakLog.filter(b=>b.start>=from&&b.start<=to);
+  const hks=getHKs(S.prop);
+  const summaryRows=hks.map(h=>{
+    const ht=cleaned.filter(tm=>tm.uid===h.id), cnt=ht.length;
+    const totalSec=ht.reduce((s,tm)=>s+tm.duration,0);
+    const avgSec=cnt?Math.round(totalSec/cnt):0;
+    const hb=allBreaks.filter(b=>b.uid===h.id), breakTotal=hb.reduce((s,b)=>s+b.duration,0);
+    return { 'Housekeeper':h.name, 'Zimmer gereinigt':cnt, 'Ø Zeit':cnt?fmtDurL(avgSec):'—', 'Gesamtzeit':cnt?fmtDurL(totalSec):'—', 'Pausen':hb.length, 'Pausenzeit':breakTotal?fmtDurL(breakTotal):'—' };
+  });
+  const detailRows=all.slice().sort((a,b)=>a.ts-b.ts).map(tm=>{
+    const u=USERS.find(x=>x.id===tm.uid);
+    const d=new Date(tm.ts);
+    const dateStr=String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
+    const typeLabel = tm.type==='dnds' ? 'DNDS' : (tm.kind==='departure' ? 'Abreise' : 'Aufenthalt');
+    return { 'Datum':dateStr, 'Uhrzeit':fmtTime(tm.ts), 'Zimmer':tm.room, 'Objekt':PROPERTY_NAMES[tm.prop]||tm.prop, 'Housekeeper':u?u.name:tm.uid, 'Dauer':tm.type==='dnds'?'—':fmtDurL(tm.duration), 'Typ':typeLabel };
+  });
+  const wb=XLSX.utils.book_new();
+  const wsSummary=XLSX.utils.json_to_sheet(summaryRows.length?summaryRows:[{'Hinweis':'Keine Daten im gewählten Zeitraum'}]);
+  const wsDetails=XLSX.utils.json_to_sheet(detailRows.length?detailRows:[{'Hinweis':'Keine Daten im gewählten Zeitraum'}]);
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Zusammenfassung');
+  XLSX.utils.book_append_sheet(wb, wsDetails, 'Details');
+  const propLabel=(PROPERTY_NAMES[S.prop]||S.prop||'Alle').replace(/[^a-zA-Z0-9]+/g,'_');
+  const periodTag=(period==='custom'&&monthVal)?monthVal:period;
+  const fname=`Housekeeping_Statistik_${propLabel}_${periodTag}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  showToast('Excel-Export erstellt: '+fname,'ok');
+}
 function ev_tog(id){ S.rtog[id]=!S.rtog[id];render(); }
 function ev_sel(n){
   if(S.multiSelect){ ev_toggleMultiSel(n); return; }
@@ -1611,6 +1707,21 @@ function startUnitsAutoRefresh(){
   if(unitsRefreshIv) return;
   unitsRefreshIv=setInterval(refreshCurrentUnits, 10*60*1000);
   document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') refreshCurrentUnits(); });
+}
+
+// Manueller Refresh-Button (v.a. für Tablet/Handy im "Zum Homescreen hinzufügen"-Modus):
+// dort bleibt die App sonst als alte JS-Version im Speicher, bis sie manuell
+// geschlossen und neu geöffnet wird. Cache/Service-Worker vorsorglich leeren
+// und die Seite mit Cache-Buster neu laden, damit garantiert die neueste
+// deployte Version kommt.
+async function ev_hardRefresh(btn){
+  if(btn) btn.classList.add('spin');
+  showToast(t('refresh_toast'),'ok');
+  try{
+    if(window.caches && caches.keys){ const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }
+    if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){ const regs=await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r=>r.unregister())); }
+  }catch(e){}
+  setTimeout(()=>{ location.href = location.pathname + '?_r=' + Date.now(); }, 300);
 }
 
 async function init(){
