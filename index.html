@@ -46,6 +46,13 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 .tile{background:#fff;border-radius:10px;border:.5px solid #e8e7e4;padding:8px 6px 14px;cursor:pointer;position:relative;text-align:center;min-height:60px;-webkit-tap-highlight-color:transparent;}
 .tile.dirty{background:#FEF3F2;border-color:#F09595;}
 .tile.zr{background:#E24B4A;border-color:#A32D2D;}
+/* Dreckige Abreise: kräftiges Violett, dicker Rand — komplette Reinigung */
+.tile.dep{background:#7B5CD6;border:2px solid #4B2FA8;}
+.tile.dep .rnum{color:#fff;}
+.tile.dep .sub{color:rgba(255,255,255,.85);font-weight:600;}
+/* Dreckige Bleibe: helles Rosé, dünner Rand — Standard-Bleibereinigung */
+.tile.stay{background:#FDECEC;border-color:#F09595;}
+.tile.stay .rnum{color:#791F1F;}
 .tile.clean{background:#EAF3DE;border-color:#C0DD97;}
 .tile.inspect{background:#E6F1FB;border-color:#85B7EB;}
 .tile.ooo{background:#F1EFE8;border-color:#D3D1C7;}
@@ -202,7 +209,7 @@ body{font-family:'Lato',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Ar
 const API = '/api/apaleo';
 // Versions-ID: ab jetzt bei jeder inhaltlichen Änderung hochzählen (SemVer-artig:
 // MAJOR.MINOR.PATCH). Sichtbar im Header und auf dem Login-Screen für Support/Debugging.
-const APP_VERSION = '6.6.0';
+const APP_VERSION = '6.7.0';
 
 // Reservierungskommentare kommen vom Gast oder der OTA (Booking.com etc.) und
 // landen unverändert in u.cm. Vor jeder innerHTML-Ausgabe escapen, sonst kann
@@ -266,7 +273,7 @@ const I18N = {
     scope_mine:'Nur meine Zimmer', scope_all:'Alle Zimmer',
     stat_zr_due:'ZR fällig', stat_dirty:'Dirty', stat_inspect:'Inspektion', stat_clean:'Clean',
     filter_all:'Alle', filter_zr:'ZR',
-    sub_running:'läuft…', sub_stay:'Stay', sub_check:'Prüfen', sub_blocked:'Gesperrt', legend_departure:'Abreise', legend_active:'Aktiv',
+    sub_running:'läuft…', sub_stay:'Stay', sub_check:'Prüfen', sub_blocked:'Gesperrt', legend_departure:'Abreise', legend_dep_dirty:'Abreise (dreckig)', legend_stay_dirty:'Bleibe (dreckig)', legend_active:'Aktiv',
     du_equipment_label:'Ausstattung',
     du_type_babycot:'Babybett', du_type_sofabed:'Schlafsofa', du_type_dog:'Hund', du_type_extras:'Extras', du_type_dayuse:'Dayuse',
     refresh_title:'Aktualisieren', refresh_toast:'App wird aktualisiert…', period_pick_month:'Monat wählen', export_excel_btn:'Excel Export',
@@ -328,7 +335,7 @@ const I18N = {
     scope_mine:'Only my rooms', scope_all:'All rooms',
     stat_zr_due:'Forced due', stat_dirty:'Dirty', stat_inspect:'Inspection', stat_clean:'Clean',
     filter_all:'All', filter_zr:'Forced',
-    sub_running:'running…', sub_stay:'Stay', sub_check:'Check', sub_blocked:'Blocked', legend_departure:'Departure', legend_active:'Active',
+    sub_running:'running…', sub_stay:'Stay', sub_check:'Check', sub_blocked:'Blocked', legend_departure:'Departure', legend_dep_dirty:'Departure (dirty)', legend_stay_dirty:'Stayover (dirty)', legend_active:'Active',
     du_equipment_label:'Setup',
     du_type_babycot:'Baby cot', du_type_sofabed:'Sofa bed', du_type_dog:'Dog', du_type_extras:'Extras', du_type_dayuse:'Dayuse',
     refresh_title:'Refresh', refresh_toast:'Refreshing app…', period_pick_month:'Pick month', export_excel_btn:'Excel export',
@@ -390,7 +397,7 @@ const I18N = {
     scope_mine:'Vetëm dhomat e mia', scope_all:'Të gjitha dhomat',
     stat_zr_due:'Detyrim i nevojshëm', stat_dirty:'Të papastra', stat_inspect:'Inspektim', stat_clean:'Të pastra',
     filter_all:'Të gjitha', filter_zr:'Detyrim',
-    sub_running:'në vazhdim…', sub_stay:'Qëndrim', sub_check:'Kontrollo', sub_blocked:'Bllokuar', legend_departure:'Nisje', legend_active:'Aktive',
+    sub_running:'në vazhdim…', sub_stay:'Qëndrim', sub_check:'Kontrollo', sub_blocked:'Bllokuar', legend_departure:'Nisje', legend_dep_dirty:'Nisje (e papastër)', legend_stay_dirty:'Qëndrim (i papastër)', legend_active:'Aktive',
     du_equipment_label:'Pajisje',
     du_type_babycot:'Shtrat foshnje', du_type_sofabed:'Kanape-shtrat', du_type_dog:'Qen', du_type_extras:'Ekstra', du_type_dayuse:'Dayuse',
     refresh_title:'Rifresko', refresh_toast:'Aplikacioni po rifreskohet…',
@@ -452,7 +459,7 @@ const I18N = {
     scope_mine:'Лише мої кімнати', scope_all:'Усі кімнати',
     stat_zr_due:'Потрібен примус', stat_dirty:'Брудні', stat_inspect:'Перевірка', stat_clean:'Чисті',
     filter_all:'Усі', filter_zr:'Примус',
-    sub_running:'триває…', sub_stay:'Проживання', sub_check:'Перевірка', sub_blocked:'Блоковано', legend_departure:'Виїзд', legend_active:'Активно',
+    sub_running:'триває…', sub_stay:'Проживання', sub_check:'Перевірка', sub_blocked:'Блоковано', legend_departure:'Виїзд', legend_dep_dirty:'Виїзд (брудний)', legend_stay_dirty:'Проживання (брудний)', legend_active:'Активно',
     du_equipment_label:'Облаштування',
     du_type_babycot:'Дитяче ліжечко', du_type_sofabed:'Диван-ліжко', du_type_dog:'Собака', du_type_extras:'Додатково', du_type_dayuse:'Dayuse',
     refresh_title:'Оновити', refresh_toast:'Оновлення додатку…',
@@ -514,7 +521,7 @@ const I18N = {
     scope_mine:'Sadece odalarım', scope_all:'Tüm odalar',
     stat_zr_due:'Zorunlu gerekli', stat_dirty:'Kirli', stat_inspect:'Kontrol', stat_clean:'Temiz',
     filter_all:'Tümü', filter_zr:'Zorunlu',
-    sub_running:'çalışıyor…', sub_stay:'Konaklama', sub_check:'Kontrol', sub_blocked:'Bloke', legend_departure:'Çıkış', legend_active:'Aktif',
+    sub_running:'çalışıyor…', sub_stay:'Konaklama', sub_check:'Kontrol', sub_blocked:'Bloke', legend_departure:'Çıkış', legend_dep_dirty:'Çıkış (kirli)', legend_stay_dirty:'Konaklama (kirli)', legend_active:'Aktif',
     du_equipment_label:'Ekipman',
     du_type_babycot:'Bebek yatağı', du_type_sofabed:'Çekyat', du_type_dog:'Köpek', du_type_extras:'Ekstralar', du_type_dayuse:'Dayuse',
     refresh_title:'Yenile', refresh_toast:'Uygulama yenileniyor…',
@@ -576,7 +583,7 @@ const I18N = {
     scope_mine:'Samo moje sobe', scope_all:'Sve sobe',
     stat_zr_due:'Obavezno dospjelo', stat_dirty:'Prljavo', stat_inspect:'Kontrola', stat_clean:'Čisto',
     filter_all:'Sve', filter_zr:'Obavezno',
-    sub_running:'u tijeku…', sub_stay:'Boravak', sub_check:'Provjera', sub_blocked:'Blokirano', legend_departure:'Odlazak', legend_active:'Aktivno',
+    sub_running:'u tijeku…', sub_stay:'Boravak', sub_check:'Provjera', sub_blocked:'Blokirano', legend_departure:'Odlazak', legend_dep_dirty:'Odlazak (prljavo)', legend_stay_dirty:'Boravak (prljavo)', legend_active:'Aktivno',
     du_equipment_label:'Opskrba',
     du_type_babycot:'Krevetić za bebu', du_type_sofabed:'Kauč na razvlačenje', du_type_dog:'Pas', du_type_extras:'Ekstra', du_type_dayuse:'Dayuse',
     refresh_title:'Osveži', refresh_toast:'Aplikacija se osvežava…',
@@ -638,7 +645,7 @@ const I18N = {
     scope_mine:'Samo moje sobe', scope_all:'Sve sobe',
     stat_zr_due:'Obavezno dospelo', stat_dirty:'Prljavo', stat_inspect:'Kontrola', stat_clean:'Čisto',
     filter_all:'Sve', filter_zr:'Obavezno',
-    sub_running:'u toku…', sub_stay:'Boravak', sub_check:'Provera', sub_blocked:'Blokirano', legend_departure:'Odlazak', legend_active:'Aktivno',
+    sub_running:'u toku…', sub_stay:'Boravak', sub_check:'Provera', sub_blocked:'Blokirano', legend_departure:'Odlazak', legend_dep_dirty:'Odlazak (prljavo)', legend_stay_dirty:'Boravak (prljavo)', legend_active:'Aktivno',
     du_equipment_label:'Opskrba',
     du_type_babycot:'Krevetac za bebu', du_type_sofabed:'Kauč na razvlačenje', du_type_dog:'Pas', du_type_extras:'Ekstra', du_type_dayuse:'Dayuse',
     refresh_title:'Osvježi', refresh_toast:'Aplikacija se osvježava…',
@@ -898,7 +905,7 @@ let S = {
   loggedIn:false, currentUser:null, loginError:'',
   role:'admin', prop:null, properties:[],
   units:{}, screen:'rooms', filter:'all', hkScope:'mine',
-  assignments:{}, conditions:{}, timers:{}, completedTimes:[], doubleUp:{}, doubleUpType:{}, doubleUpLocked:{}, guestClean:{},
+  assignments:{}, conditions:{}, condTs:{}, timers:{}, completedTimes:[], doubleUp:{}, doubleUpType:{}, doubleUpLocked:{}, guestClean:{},
   breakActive:{}, breakLog:[],
   selRoom:null, loadingProp:false, rtog:{1:true,2:true,3:true}, toast:null, statsPeriod:'today', statsMonth:null, statsPerson:null,
   multiSelect:false, multiSel:new Set(),
@@ -932,20 +939,36 @@ async function fetchPropertyData(propId) {
     // Folgereservierung kommen, nicht vom abreisenden Gast
     apiFetch('/booking/v1/reservations?propertyIds='+propId+'&status=Confirmed&status=InHouse&dateFilter=Arrival&from='+fromISO+'&to='+toISO+'&pageSize=500'),
   ]);
+  // Datum aus Apaleo-String ("2026-10-05T15:00:00+02:00" oder "2026-10-05") als
+  // LOKALE Mitternacht parsen. Vorher: new Date('2026-10-05') = UTC-Mitternacht →
+  // in DE (UTC+1/+2) fehlten 1–2 Stunden, Math.floor ergab eine Nacht zu wenig →
+  // ZR kam an Nacht 3/5/7 statt 2/4/6 (bzw. gar nicht, wenn der Gast vorher abreiste).
+  const dayOf = s => { const [y,m,d]=String(s||'').split('T')[0].split('-').map(Number); return new Date(y,(m||1)-1,d||1); };
+  const depToday = r => !!r?.departure && String(r.departure).split('T')[0]===todayStr;
   const resMap = {};
-  (rd.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) resMap[uid]=r; });
+  // Bei mehreren InHouse-Reservierungen auf einem Zimmer (abreisender Gast noch
+  // nicht ausgecheckt + neuer Gast schon eingecheckt) die BLEIBENDE Reservierung
+  // nehmen — sonst hing die ZR-Berechnung vom Zufall der API-Reihenfolge ab.
+  (rd.reservations||[]).forEach(r => {
+    const uid = r.unit?.id||r.unitId; if(!uid) return;
+    const prev = resMap[uid];
+    if(!prev || (depToday(prev) && !depToday(r))) resMap[uid]=r;
+  });
   const depUnits = new Set();
   (dd.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) depUnits.add(uid); });
   const arrMap = {};
   (ad.reservations||[]).forEach(r => { const uid = r.unit?.id||r.unitId; if(uid) arrMap[uid]=r; });
   return (ud.units||[]).map(u => {
     const res = resMap[u.id];
-    const nights = res ? Math.max(0, Math.floor((today - new Date(res.arrival.split('T')[0])) / 86400000)) : 0;
+    // Math.round statt floor: robust gegen Sommer-/Winterzeitwechsel (23h/25h-Tage).
+    const nights = res ? Math.max(0, Math.round((today - dayOf(res.arrival)) / 86400000)) : 0;
+    // Gast reist heute ab → Abreise-Reinigung, keine Zwangsreinigung.
+    const leaving = !res || depToday(res);
     // Same-Day-Turnover: Abreise + Anreise am selben Tag → Kommentar der Folgereservierung
     // zeigen (relevant für die Vorbereitung des Zimmers), nicht den des abreisenden Gasts.
     const turnoverRes = depUnits.has(u.id) ? arrMap[u.id] : null;
     const cm = turnoverRes ? (turnoverRes.comment||'') : (res?.comment||'');
-    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:depUnits.has(u.id), cm };
+    return { id:u.id, n:u.name, c:(u.status?.condition||u.condition)||'Clean', o:!!res||u.status?.isOccupied, nights, dT:depUnits.has(u.id), leaving, cm };
   });
 }
 
@@ -957,7 +980,12 @@ const rKey    = (p,n) => p+'_'+n;
 // Gastanfrage kann ein frisch gereinigtes Zimmer nicht rückwirkend
 // "schmutzig" machen, sie greift, sobald es das nächste Mal wieder Dirty ist.
 const isGuestClean = (u,p=S.prop) => !!S.guestClean[rKey(p,u.n)];
-const isZR    = (u,p=S.prop) => u.c==='Dirty'&&u.o&&(isGuestClean(u,p)||(u.nights>=1&&u.nights%2===0));
+// Abreise-Zimmer (Gast reist heute ab) sind nie ZR — dort steht ohnehin die
+// komplette Abreise-Reinigung an. Zustand über getCond (inkl. lokaler Änderung).
+const isZR    = (u,p=S.prop) => getCond(u,p)==='Dirty'&&u.o&&!(u.dT&&u.leaving)&&(isGuestClean(u,p)||(u.nights>=2&&u.nights%2===0));
+// Dreckige Abreise: heute abreisend ODER leerstehend & schmutzig (komplette Reinigung).
+// Dreckige Bleibe: belegt, Gast bleibt, keine ZR (Standard-Bleibereinigung).
+const isDepDirty = (u,p=S.prop) => getCond(u,p)==='Dirty'&&!isZR(u,p)&&(u.dT||!u.o);
 // DNDS ("Gast wollte keine Störung") wird nicht separat gespeichert, sondern aus
 // dem Reinigungs-Log abgeleitet (type:'dnds') und gilt nur für den aktuellen Tag —
 // setzt sich also automatisch um Mitternacht zurück, ohne dass jemand manuell
@@ -982,9 +1010,9 @@ function visibleHKs(){
 }
 
 function getStats(p) {
-  let dirty=0,zr=0,insp=0,clean=0;
-  (S.units[p]||[]).forEach(u=>{const c=getCond(u,p);if(isZR(u)&&c==='Dirty')zr++;else if(c==='Dirty')dirty++;else if(c==='CleanToBeInspected')insp++;else if(c==='Clean')clean++;});
-  return{dirty,zr,insp,clean};
+  let dirty=0,zr=0,insp=0,clean=0,dep=0;
+  (S.units[p]||[]).forEach(u=>{const c=getCond(u,p);if(isZR(u,p))zr++;else if(c==='Dirty'){dirty++;if(isDepDirty(u,p))dep++;}else if(c==='CleanToBeInspected')insp++;else if(c==='Clean')clean++;});
+  return{dirty,zr,insp,clean,dep};
 }
 function getHKs(p){ return USERS.filter(u=>u.role==='housekeeper'&&(u.props.includes(p)||u.props.includes('alle'))); }
 // Analog zu getHKs, aber für Admins — damit Statistik/Team/Benutzer auf den
@@ -1011,6 +1039,20 @@ function maybeTimerIv(){
     if(!alive) stopTimerIv();
   },1000);
 }
+
+// Lokale Zustands-Overrides (S.conditions) nur kurz behalten, bis Apaleo die
+// Änderung bestätigt hat. Vorher blieben sie bis zum Neuladen der Seite stehen:
+// ein gestern auf "Clean" gesetztes Zimmer blieb auf einem über Nacht offenen
+// Tablet "Clean", obwohl Apaleo es nach dem Nachtlauf wieder auf "Dirty" setzte
+// → ZR wurde nicht angezeigt.
+function pruneConditionOverrides(p){
+  const now=Date.now();
+  Object.keys(S.conditions).forEach(k=>{
+    if(!k.startsWith(p+'_')) return;
+    if(!S.condTs[k] || now-S.condTs[k] > 2*60*1000){ delete S.conditions[k]; delete S.condTs[k]; }
+  });
+}
+async function loadUnits(p){ const us = await fetchPropertyData(p); pruneConditionOverrides(p); return us; }
 
 function render(){ stopTimerIv(); document.getElementById('app').innerHTML=buildApp(); maybeTimerIv(); focusLoginIfNeeded(); }
 
@@ -1094,6 +1136,8 @@ function scrRooms(){
   const us=S.units[S.prop]||[], st=getStats(S.prop);
   let fil=us;
   if(S.filter==='dirty')   fil=us.filter(u=>getCond(u,S.prop)==='Dirty'&&!isZR(u));
+  else if(S.filter==='dep') fil=us.filter(u=>isDepDirty(u));
+  else if(S.filter==='stay') fil=us.filter(u=>getCond(u,S.prop)==='Dirty'&&!isZR(u)&&!isDepDirty(u));
   else if(S.filter==='zr') fil=us.filter(u=>isZR(u)&&getCond(u,S.prop)==='Dirty');
   else if(S.filter==='inspect') fil=us.filter(u=>getCond(u,S.prop)==='CleanToBeInspected');
   else if(S.filter==='clean')   fil=us.filter(u=>getCond(u,S.prop)==='Clean');
@@ -1160,12 +1204,13 @@ function scrRooms(){
     <div class="stat"><div class="n">${st.insp}</div><div class="l">${t('stat_inspect')}</div></div>
     <div class="stat"><div class="n">${st.clean}</div><div class="l">${t('stat_clean')}</div></div>
   </div>`}
-  <div class="filter-row">${[['all',t('filter_all')],['zr',t('filter_zr')],['dirty',t('stat_dirty')],['inspect',t('stat_inspect')],['clean',t('stat_clean')],['doubleUp',t('tab_doubleups')]].map(([k,l])=>`<button class="fbtn${S.filter===k?' act':''}" onclick="ev_filter('${k}')">${l}</button>`).join('')}</div>
+  <div class="filter-row">${[['all',t('filter_all')],['zr',t('filter_zr')],['dep','🧳 '+t('legend_departure')],['stay',t('legend_stay_dirty')],['dirty',t('stat_dirty')],['inspect',t('stat_inspect')],['clean',t('stat_clean')],['doubleUp',t('tab_doubleups')]].map(([k,l])=>`<button class="fbtn${S.filter===k?' act':''}" onclick="ev_filter('${k}')">${l}</button>`).join('')}</div>
   <div class="grid">${fil.map(u=>{
     const c=getCond(u,S.prop),zr=isZR(u)&&c==='Dirty',k=rKey(S.prop,u.n);
-    const running=!!S.timers[k],tc=running?'timing':(zr?'zr':tcls(c));
+    const dep=isDepDirty(u);
+    const running=!!S.timers[k],tc=running?'timing':(zr?'zr':dep?'dep':(c==='Dirty'?'stay':tcls(c)));
     const au=S.assignments[k]?USERS.find(x=>x.id===S.assignments[k]):null;
-    const sub=running?t('sub_running'):zr?(isGuestClean(u)?`ZR·🔔`:`ZR·${u.nights}n`):c==='Dirty'&&u.o?`${t('sub_stay')}·${u.nights}n`:c==='CleanToBeInspected'?t('sub_check'):(c==='OutOfService'||c==='OutOfOrder')?t('sub_blocked'):'';
+    const sub=running?t('sub_running'):zr?(isGuestClean(u)?`ZR·🔔`:`ZR·${u.nights}n`):dep?t('legend_departure'):c==='Dirty'&&u.o?`${t('sub_stay')}·${u.nights}n`:c==='CleanToBeInspected'?t('sub_check'):(c==='OutOfService'||c==='OutOfOrder')?t('sub_blocked'):'';
     return`<div class="tile ${tc}${S.selRoom?.n===u.n?' sel':''}${S.multiSelect&&S.multiSel.has(k)?' msel':''}" onclick="ev_sel('${u.n}')">
       ${running?'<div class="timer-dot"></div>':''}
       ${hasDU(k)?`<div class="du-badge">${S.doubleUp[k]?'2x':''}${(S.doubleUpType[k]||[]).length?' '+S.doubleUpType[k].map(duTypeAbbr).join('+'):''}</div>`:''}
@@ -1178,7 +1223,8 @@ function scrRooms(){
   }).join('')}</div>
   <div class="legend">
     <div class="leg"><div class="leg-dot" style="background:#E24B4A"></div>${t('filter_zr')}</div>
-    <div class="leg"><div class="leg-dot" style="background:#F09595"></div>${t('stat_dirty')}</div>
+    <div class="leg"><div class="leg-dot" style="background:#7B5CD6"></div>${t('legend_dep_dirty')}</div>
+    <div class="leg"><div class="leg-dot" style="background:#FDECEC;border:1px solid #F09595"></div>${t('legend_stay_dirty')}</div>
     <div class="leg"><div class="leg-dot" style="background:#FAC775"></div>${t('legend_active')}</div>
     <div class="leg"><div class="leg-dot" style="background:#85B7EB"></div>${t('stat_inspect')}</div>
     <div class="leg"><div class="leg-dot" style="background:#97C459"></div>${t('stat_clean')}</div>
@@ -1470,7 +1516,7 @@ async function ev_prop(p){
   // wurde (führte dazu, dass eine Abreise-Reinigung fälschlich als "Bleibe"
   // geloggt wurde).
   S.loadingProp=true; render();
-  try{ S.units[p]=await fetchPropertyData(p); }catch(e){ S.units[p]=S.units[p]||[]; }
+  try{ S.units[p]=await loadUnits(p); }catch(e){ S.units[p]=S.units[p]||[]; }
   S.loadingProp=false;
   render();
 }
@@ -1626,7 +1672,7 @@ async function ev_inspect(k){
     // Abreise-Reinigung — Grundlage ist u.dT (Zimmer hat heute eine Abreise).
     entry={uid:S.timers[k].uid,prop:pts[0],room:pts.slice(1).join('_'),duration:dur,ts:Date.now(),kind:(u&&u.dT)?'departure':'stay'};
     S.completedTimes.push(entry); delete S.timers[k]; }
-  S.conditions[k]='CleanToBeInspected'; S.selRoom=null;
+  S.conditions[k]='CleanToBeInspected'; S.condTs[k]=Date.now(); S.selRoom=null;
   // Zuweisung an den Housekeeper wird nach erfolgreicher Reinigung entfernt —
   // Zimmer ist fertig, das Housekeeping-Team ist wieder frei für neue Zimmer.
   const hadAssignment=!!S.assignments[k];
@@ -1681,7 +1727,7 @@ async function ev_completeDoubleUp(k){
 }
 
 async function ev_completeInspection(k){
-  S.conditions[k]='Clean'; S.selRoom=null;
+  S.conditions[k]='Clean'; S.condTs[k]=Date.now(); S.selRoom=null;
   const u=(S.units[S.prop]||[]).find(x=>x.n===k.split('_').slice(1).join('_'));
   if(u) u.c='Clean';
   render();
@@ -1700,7 +1746,7 @@ async function ev_completeInspection(k){
 let unitsRefreshIv=null;
 async function refreshCurrentUnits(){
   if(!S.loggedIn||!S.prop) return;
-  try{ S.units[S.prop]=await fetchPropertyData(S.prop); render(); }
+  try{ S.units[S.prop]=await loadUnits(S.prop); render(); }
   catch(e){ console.warn('[refreshCurrentUnits] Konnte Zimmerdaten nicht aktualisieren', e.message); }
 }
 function startUnitsAutoRefresh(){
@@ -1746,7 +1792,7 @@ async function init(){
     S.properties=props.length>0?props:allowed.filter(id=>id in PROPERTY_NAMES).map(id=>({id,name:PROPERTY_NAMES[id]}));
     S.prop=S.properties[0]?.id||allowed[0];
     S.loadingProp=true; render();
-    S.units[S.prop]=await fetchPropertyData(S.prop);
+    S.units[S.prop]=await loadUnits(S.prop);
     S.loadingProp=false; render();
     startUnitsAutoRefresh();
   }catch(e){
