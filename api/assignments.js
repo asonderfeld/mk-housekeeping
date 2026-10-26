@@ -15,6 +15,18 @@ const { redis, parseVal } = require('./_redis');
 const { getSession, tokenFromReq } = require('./_auth');
 
 const KEY = 'hk:assignments';
+// Rush-Markierungen (v6.9.0): pro Zimmer-Key {ts, by}. Der Client wertet nur
+// Markierungen von heute aus (ts >= lokale Mitternacht) — alte verfallen also
+// automatisch, auch wenn sie nie aktiv aufgehoben wurden.
+const RUSH_KEY = 'hk:rush';
+
+async function getRush(r) {
+  const map = await r.hgetall(RUSH_KEY);
+  if (!map) return {};
+  const out = {};
+  Object.entries(map).forEach(([k, v]) => { out[k] = parseVal(v); });
+  return out;
+}
 
 async function getAll(r) {
   const map = await r.hgetall(KEY);
@@ -34,14 +46,14 @@ module.exports = async (req, res) => {
     const r = redis();
 
     if (req.method === 'GET') {
-      const assignments = await getAll(r);
-      res.status(200).json({ ok: true, assignments });
+      const [assignments, rush] = await Promise.all([getAll(r), getRush(r)]);
+      res.status(200).json({ ok: true, assignments, rush });
       return;
     }
 
     if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
 
-    const { action, key, uid, prop } = req.body || {};
+    const { action, key, keys, uid, prop } = req.body || {};
     const session = await getSession(r, tokenFromReq(req));
     if (!session) { res.status(401).json({ error: 'Bitte erneut anmelden.' }); return; }
 
@@ -70,6 +82,26 @@ module.exports = async (req, res) => {
       if (keys.length) await r.hdel(KEY, ...keys);
       const assignments = await getAll(r);
       res.status(200).json({ ok: true, assignments });
+      return;
+    }
+
+    // Rush setzen: nur Admins (Hausdamen). Mehrere Zimmer auf einmal möglich.
+    if (action === 'rushSet') {
+      if (session.role !== 'admin') { res.status(403).json({ error: 'Nur Admins/Hausdamen dürfen Rush setzen.' }); return; }
+      const list = Array.isArray(keys) ? keys.filter(Boolean) : (key ? [key] : []);
+      if (!list.length) { res.status(400).json({ error: '"key" fehlt' }); return; }
+      const val = JSON.stringify({ ts: Date.now(), by: session.userId || session.id || '' });
+      const obj = {}; list.forEach(k => { obj[k] = val; });
+      await r.hset(RUSH_KEY, obj);
+      res.status(200).json({ ok: true, rush: await getRush(r) });
+      return;
+    }
+
+    // Rush aufheben: Admins jederzeit; Housekeeper beim Abschluss der Reinigung.
+    if (action === 'rushClear') {
+      if (!key) { res.status(400).json({ error: '"key" fehlt' }); return; }
+      await r.hdel(RUSH_KEY, key);
+      res.status(200).json({ ok: true, rush: await getRush(r) });
       return;
     }
 
