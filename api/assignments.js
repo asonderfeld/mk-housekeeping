@@ -19,6 +19,19 @@ const KEY = 'hk:assignments';
 // Markierungen von heute aus (ts >= lokale Mitternacht) — alte verfallen also
 // automatisch, auch wenn sie nie aktiv aufgehoben wurden.
 const RUSH_KEY = 'hk:rush';
+// Virtuelle Zimmer (v6.9.2, z.B. "Hotel Öffentlich" in Mariakirchen), die es in
+// Apaleo nicht gibt: Zustand pro Zimmer-Key {c, ts}. Der Client wertet nur
+// Einträge von heute aus — morgens ist so jeder Bereich wieder "Dirty".
+const VCOND_KEY = 'hk:vcond';
+const VCOND_ALLOWED = ['Dirty', 'CleanToBeInspected', 'Clean'];
+
+async function getHash(r, key) {
+  const map = await r.hgetall(key);
+  if (!map) return {};
+  const out = {};
+  Object.entries(map).forEach(([k, v]) => { out[k] = parseVal(v); });
+  return out;
+}
 
 async function getRush(r) {
   const map = await r.hgetall(RUSH_KEY);
@@ -46,14 +59,14 @@ module.exports = async (req, res) => {
     const r = redis();
 
     if (req.method === 'GET') {
-      const [assignments, rush] = await Promise.all([getAll(r), getRush(r)]);
-      res.status(200).json({ ok: true, assignments, rush });
+      const [assignments, rush, vcond] = await Promise.all([getAll(r), getRush(r), getHash(r, VCOND_KEY)]);
+      res.status(200).json({ ok: true, assignments, rush, vcond });
       return;
     }
 
     if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
 
-    const { action, key, keys, uid, prop } = req.body || {};
+    const { action, key, keys, uid, prop, cond } = req.body || {};
     const session = await getSession(r, tokenFromReq(req));
     if (!session) { res.status(401).json({ error: 'Bitte erneut anmelden.' }); return; }
 
@@ -102,6 +115,15 @@ module.exports = async (req, res) => {
       if (!key) { res.status(400).json({ error: '"key" fehlt' }); return; }
       await r.hdel(RUSH_KEY, key);
       res.status(200).json({ ok: true, rush: await getRush(r) });
+      return;
+    }
+
+    // Zustand eines virtuellen Zimmers setzen (jeder angemeldete Nutzer).
+    if (action === 'vcondSet') {
+      if (!key) { res.status(400).json({ error: '"key" fehlt' }); return; }
+      if (!VCOND_ALLOWED.includes(cond)) { res.status(400).json({ error: 'Ungültiger Zustand: ' + cond }); return; }
+      await r.hset(VCOND_KEY, { [key]: JSON.stringify({ c: cond, ts: Date.now() }) });
+      res.status(200).json({ ok: true, vcond: await getHash(r, VCOND_KEY) });
       return;
     }
 
